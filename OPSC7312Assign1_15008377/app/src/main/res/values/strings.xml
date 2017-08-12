@@ -1,4 +1,15 @@
 <resources>
     <string name="app_name">" OPSC7312Assign1_15008377"</string>
     <string name="title_activity_maps">Map</string>
+
+    <string name="prompt_email">Enter your email address</string>
+    <string name="prompt_password">Enter a password</string>
+    <string name="prompt_confirm_password">Confirm your password</string>
+
+    <string name="login">Login</string>
+    <string name="createAccount">Create Account</string>
+    <string name="text_start_time">Start time: %s</string>
+    <string name="text_end_time">End time: %s</string>
+    <string name="text_distance_covered">Distance covered: %s metres</string>
+    <string name="text_average_speed">Average speed %s km/h</string>
 </resources>

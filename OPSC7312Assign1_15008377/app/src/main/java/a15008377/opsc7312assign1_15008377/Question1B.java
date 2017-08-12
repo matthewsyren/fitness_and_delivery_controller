@@ -10,8 +10,6 @@ import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.net.Uri;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
@@ -31,20 +29,15 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.analytics.FirebaseAnalytics;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOError;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 public class Question1B extends FragmentActivity implements OnMapReadyCallback {
     //Declarations
@@ -52,7 +45,7 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
     private PolylineOptions polylineOptions = new PolylineOptions();
     private final int LOCATION_PERMISSION_KEY = 12345;
     private LocationListener locationListener = null;
-    private long startTime = 0, endTime = 0;
+    private long startTime = 0;
     private Location previousLocation;
     private double distanceTravelled = 0;
     private StorageReference mStorageRef;
@@ -115,6 +108,8 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
             Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
             zoomToLocation(latLng);
+
+            //Changes the icon of the FloatingActionButton
             FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.floating_action_button_track_route);
             fab.setImageResource(R.drawable.ic_stop);
             Toast.makeText(getApplicationContext(), "Route tracking started", Toast.LENGTH_LONG).show();
@@ -202,13 +197,11 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
         try{
             locationListener = null;
             Toast.makeText(getApplicationContext(), "Route tracking stopped", Toast.LENGTH_LONG).show();
-            endTime = System.currentTimeMillis();
-            long timeDifference = endTime - startTime;
-            Toast.makeText(getApplicationContext(), "Time: " + timeDifference / 1000 + " seconds", Toast.LENGTH_LONG).show();
-            Toast.makeText(getApplicationContext(), "Distance: " + distanceTravelled + " metres", Toast.LENGTH_LONG).show();
+
+            //Changes the icon of the FloatingActionButton
             FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.floating_action_button_track_route);
             fab.setImageResource(R.drawable.ic_run);
-            saveRouteDetails();
+            promptToSaveUserDetails();
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -216,7 +209,7 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
     }
 
     //Method saves the details of the route taken by the user while tracking their location
-    public void saveRouteDetails(){
+    public void promptToSaveUserDetails(){
         AlertDialog alertDialog = new AlertDialog.Builder(Question1B.this).create();
         alertDialog.setTitle("Save Route?");
         alertDialog.setMessage("Would you like to save the details of the route you took today?");
@@ -228,7 +221,7 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
                 Intent intent;
                 switch(button){
                     case AlertDialog.BUTTON_POSITIVE:
-                        saveScreenshot();
+                        saveUserDetails();
                         break;
                     case AlertDialog.BUTTON_NEGATIVE:
                         break;
@@ -243,6 +236,32 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
         alertDialog.show();
     }
 
+    //Method saves the user details to Firebase
+    public void saveUserDetails(){
+        try{
+            //Calculates the Run's details
+            long endTime = System.currentTimeMillis();
+            long timeDifference = endTime - startTime;
+            double averageSpeed = distanceTravelled / (timeDifference / 1000) * 3.6;
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat();
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(startTime);
+            String startDate = simpleDateFormat.format(calendar.getTime());
+            calendar.setTimeInMillis(endTime);
+            String endDate = simpleDateFormat.format(calendar.getTime());
+
+            //Gets a reference to the Firebase Database (with a randomised key for the Run), creates a Run object and writes the data to the Firebase Database and the image to Firebase Storage
+            FirebaseDatabase database = FirebaseDatabase.getInstance();
+            DatabaseReference databaseReference = database.getReference().child(new User(this).getUserKey());
+            String key = databaseReference.push().getKey();
+            Run run = new Run(startDate, endDate, distanceTravelled, averageSpeed);
+            saveScreenshot(databaseReference, key, run);
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     //Method opens the RouteHistoryActivity
     public void viewHistoryOnClick(View view){
         try{
@@ -255,7 +274,7 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
     }
 
     //Method saves a screenshot of the map to Firebase Storage
-    public void saveScreenshot(){
+    public void saveScreenshot(final DatabaseReference databaseReference, final String key, final Run run){
         try{
             GoogleMap.SnapshotReadyCallback callback = new GoogleMap.SnapshotReadyCallback() {
                 @Override
@@ -265,11 +284,12 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
                         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                         bitmap.compress(Bitmap.CompressFormat.JPEG, 40, bytes);
 
-                        StorageReference storageReference = mStorageRef.child("test.jpg");
+                        //Saves the image to Firebase Storage (with the name of [key for run].jpg
+                        StorageReference storageReference = mStorageRef.child(key + ".jpg");
                         storageReference.putBytes(bytes.toByteArray()).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                             @Override
                             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                                Toast.makeText(getApplicationContext(), "Route saved ", Toast.LENGTH_LONG).show();
+                                saveRunDetails(databaseReference, key, run);
 
                             }
                         }).addOnFailureListener(new OnFailureListener() {
@@ -286,6 +306,17 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
             };
             //Steps the SnapshotReadyCallback function for the map
             mMap.snapshot(callback);
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Method writes the information to the Firebase database
+    public void saveRunDetails(DatabaseReference databaseReference, String key, Run run){
+        try{
+            databaseReference.child(key).setValue(run);
+            Toast.makeText(getApplicationContext(), "Run information saved", Toast.LENGTH_LONG).show();
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
