@@ -12,4 +12,97 @@
     <string name="text_end_time">End time: %s</string>
     <string name="text_distance_covered">Distance covered: %s metres</string>
     <string name="text_average_speed">Average speed %s km/h</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="navigation_drawer_home">Home</string>
+    <string name="navigation_drawer_stock_control">Stock Control</string>
+    <string name="navigation_drawer_delivery_control">Delivery Control</string>
+    <string name="navigation_drawer_client_control">Client Control</string>
+    <string name="navigation_drawer_completed_deliveries">Completed Deliveries</string>
+    <string name="navigation_drawer_help">Help</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_stock_control">StockControlActivity</string>
+
+    <!-- HomeActivity -->
+    <string name="home_app_bar_title">Today\'s Deliveries</string>
+
+    <!-- StockControlActivity -->
+    <string name="button_add_stock">Add Stock</string>
+    <string name="button_update_stock">Update Stock</string>
+    <string name="button_delete_stock">Delete Stock</string>
+    <string name="text_stock_report_heading">Available Stock</string>
+    <string name="text_stock_search_hint">Search for Stock ID...</string>
+
+    <!-- StockActivity -->
+    <string name="label_stock_id">Stock ID:</string>
+    <string name="label_stock_description">Stock Description</string>
+    <string name="label_stock_quantity">Stock Quantity</string>
+
+    <!-- ClientControlActivity -->
+    <string name="button_add_client">Add Client</string>
+    <string name="button_update_client">Update Client</string>
+    <string name="button_delete_client">Delete Client</string>
+    <string name="text_client_report_heading">Current Clients</string>
+    <string name="text_client_search_hint">Search for Client ID...</string>
+
+    <!-- ClientActivity -->
+    <string name="label_client_id">Client ID</string>
+    <string name="label_client_name">Client Name</string>
+    <string name="label_client_email">Client Email Address</string>
+    <string name="label_client_address">Client Address</string>
+    <string name="title_activity_client_control">ClientControlActivity</string>
+    <string name="title_activity_delivery_control">DeliveryControlActivity</string>
+    <string name="title_activity_main">MainActivity</string>
+
+    <!-- DeliveryControlActivity -->
+    <string name="button_add_delivery">Add Delivery</string>
+    <string name="button_update_delivery">Update Delivery</string>
+    <string name="button_delete_delivery">Delete Delivery</string>
+    <string name="text_delivery_report_heading">Upcoming Deliveries</string>
+    <string name="text_delivery_search_hint">Search for Delivery ID...</string>
+    <string name="button_mark_delivery_as_complete">Mark as Complete</string>
+
+    <!-- DeliveryActivity -->
+    <string name="label_delivery_id">Delivery ID</string>
+    <string name="label_delivery_date">Delivery Date</string>
+    <string name="label_delivery_client">Delivery Client</string>
+    <string name="label_delivery_items">Delivery Items</string>
+    <string name="label_delivery_item_quantity">Item Quantity</string>
+    <string name="button_add_delivery_item">Add Item To Delivery</string>
+    <string name="title_activity_delivery_map">Map</string>
+    <string name="button_increment_delivery_item">+</string>
+    <string name="button_decrement_delivery_item">-</string>
+    <string name="title_activity_completed_delivery">CompletedDeliveryActivity</string>
+    <string name="title_activity_stock">Stock Control</string>
+    <string name="title_activity_client">Client Control</string>
+    <string name="title_activity_delivery">Delivery Control</string>
+
+    <!-- CompletedDeliveryActivity -->
+    <string name="text_completed_delivery_heading">Completed Deliveries</string>
+    <string name="title_activity_help">HelpActivity</string>
+
+    <!-- HelpActivity -->
+    <string name="text_help">This app allows you to keep track of Stock, Clients and Deliveries. There is a dedicated page for the control of each of these categories, and those pages can be accessed via the menu. \n\nIf you would like to add information, then open the menu and click on the appropriate control page, and then click on the circular + button near the bottom right corner. \n\nIf you would like to update existing data, go to the appropriate control page and click on the item in the list that is displayed. \n\nTo delete an item, go to the appropriate Control page and click on the delete button on the appropriate item. \n\nStock and Client items are both needed before scheduling a Delivery, so be sure to add those before trying to schedule a Delivery. \n\nThe Home page will show a map with markers representing the destination of each of your Deliveries for the current date. You can click on one of the markers to see its information or to navigate to it using Google Maps</string>
+
+    <!-- StockReportListViewAdapter -->
+    <string name="stock_id">Stock ID: %s</string>
+    <string name="stock_description">Stock Description: %s</string>
+    <string name="stock_quantity">Stock Quantity: %d</string>
+
+    <!-- ClientReportListViewAdapter -->
+    <string name="client_id">Stock ID: %s</string>
+    <string name="client_name">Client Name: %s</string>
+    <string name="client_email">Client Email: %s</string>
+    <string name="client_address">Client Address: %s</string>
+
+    <!-- DeliveryReportListViewAdapter -->
+    <string name="delivery_id">Stock ID: %s</string>
+    <string name="delivery_client_id">Client ID: %s</string>
+    <string name="delivery_date">Delivery Date: %s</string>
+    <string name="delivery_complete">Delivery Complete: %s</string>
+
+    <!-- DeliveryItemListViewAdapter -->
+    <string name="delivery_item__id">ID: %s</string>
+    <string name="delivery_item_quantity">Quantity: %d</string>
 </resources>

@@ -37,12 +37,62 @@
         <activity android:name=".RouteHistoryActivity"></activity>
         <activity android:name=".CreateAccountActivity"></activity>
         <activity android:name=".LoginActivity">
+        </activity>
+
+        <activity
+            android:name=".HomeActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".StockControlActivity"
+            android:label="@string/title_activity_stock_control"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".StockActivity"
+            android:label="@string/title_activity_stock"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ClientActivity"
+            android:label="@string/title_activity_client"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ClientControlActivity"
+            android:label="@string/title_activity_client_control"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".DeliveryControlActivity"
+            android:label="@string/title_activity_delivery_control"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".DeliveryActivity"
+            android:label="@string/title_activity_delivery"
+            android:screenOrientation="portrait" />
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/google_maps_key" />
+
+        <activity
+            android:name=".CompletedDeliveryActivity"
+            android:label="@string/title_activity_completed_delivery"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".HelpActivity"
+            android:label="@string/title_activity_help"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity android:name=".RoutePlannerActivity"></activity>
     </application>
 
 </manifest>

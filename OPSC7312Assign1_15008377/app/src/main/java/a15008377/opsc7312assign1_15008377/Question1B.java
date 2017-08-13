@@ -218,12 +218,12 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
         DialogInterface.OnClickListener dialogOnClickListener = new DialogInterface.OnClickListener(){
             @Override
             public void onClick(DialogInterface dialog, int button) {
-                Intent intent;
                 switch(button){
                     case AlertDialog.BUTTON_POSITIVE:
                         saveUserDetails();
                         break;
                     case AlertDialog.BUTTON_NEGATIVE:
+                        Toast.makeText(getApplicationContext(), "Route information not saved", Toast.LENGTH_LONG).show();
                         break;
                 }
             }
@@ -252,7 +252,7 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
 
             //Gets a reference to the Firebase Database (with a randomised key for the Run), creates a Run object and writes the data to the Firebase Database and the image to Firebase Storage
             FirebaseDatabase database = FirebaseDatabase.getInstance();
-            DatabaseReference databaseReference = database.getReference().child(new User(this).getUserKey());
+            DatabaseReference databaseReference = database.getReference().child(new User(this).getUserKey()).child("runs");
             String key = databaseReference.push().getKey();
             Run run = new Run(startDate, endDate, distanceTravelled, averageSpeed);
             saveScreenshot(databaseReference, key, run);

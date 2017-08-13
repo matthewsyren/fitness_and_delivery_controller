@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <android.support.v7.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/app_bar_margin"
+        android:layout_marginBottom="@dimen/app_bar_margin"
+        android:layout_marginLeft="@dimen/button_padding"
+        android:layout_marginRight="@dimen/button_padding"
+        android:background="@color/white"
+        android:elevation="@dimen/card_view_content_padding"
+        app:contentPadding="@dimen/card_view_content_padding"
+        app:cardCornerRadius="@dimen/card_view_corner_margin">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:descendantFocusability="blocksDescendants">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/text_delivery_item_id"
+                    style="@style/ListViewTextStyle"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/text_delivery_item_quantity"
+                    style="@style/ListViewTextStyle"/>
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:id="@+id/button_increment_delivery_item"
+                    android:text="@string/button_increment_delivery_item"
+                    style="@style/SecondaryButtonStyle"
+                    android:layout_weight="0.33"
+                    android:textSize="@dimen/label_text_size"/>
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:id="@+id/button_decrement_delivery_item"
+                    android:text="@string/button_decrement_delivery_item"
+                    android:layout_weight="0.33"
+                    style="@style/SecondaryButtonStyle"
+                    android:textSize="@dimen/label_text_size"/>
+
+                <ImageButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:id="@+id/button_remove_delivery_item"
+                    android:src="@drawable/ic_delete"
+                    android:layout_weight="0.33"
+                    style="@style/SecondaryButtonStyle" />
+            </LinearLayout>
+            </LinearLayout>
+    </android.support.v7.widget.CardView>
+</LinearLayout>

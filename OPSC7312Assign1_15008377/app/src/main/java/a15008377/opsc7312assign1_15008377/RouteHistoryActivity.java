@@ -41,7 +41,7 @@ public class RouteHistoryActivity extends AppCompatActivity {
     public void getRuns(final String userKey){
         //Gets reference to Firebase
         final FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
-        DatabaseReference databaseReference = firebaseDatabase.getReference().child(userKey);
+        DatabaseReference databaseReference = firebaseDatabase.getReference().child(userKey).child("runs");
 
         //Adds Listeners for when the data is changed
         databaseReference.addValueEventListener(new ValueEventListener() {

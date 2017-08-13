@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_add_client"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="a15008377.opsc7312assign1_15008377.ClientActivity">
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fadeScrollbars="false">
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/label_client_id"
+                android:text="@string/label_client_id"
+                style="@style/TextStyle"/>
+
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/text_client_id"
+                android:layout_below="@id/label_client_id"
+                style="@style/TextStyle"
+                android:layout_marginBottom="@dimen/activity_vertical_margin"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/label_client_name"
+                android:layout_below="@+id/text_client_id"
+                android:text="@string/label_client_name"
+                style="@style/TextStyle"/>
+
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/text_client_name"
+                android:layout_below="@id/label_client_name"
+                style="@style/TextStyle"
+                android:layout_marginBottom="@dimen/activity_vertical_margin"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/label_client_email"
+                android:layout_below="@+id/text_client_name"
+                android:text="@string/label_client_email"
+                style="@style/TextStyle"/>
+
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/label_client_email"
+                android:id="@+id/text_client_email"
+                style="@style/TextStyle"
+                android:inputType="textWebEmailAddress"
+                android:layout_marginBottom="@dimen/activity_vertical_margin"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/label_client_address"
+                android:layout_below="@+id/text_client_email"
+                android:text="@string/label_client_address"
+                style="@style/TextStyle"/>
+
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/label_client_address"
+                android:id="@+id/text_client_address"
+                android:inputType="text"
+                style="@style/TextStyle"
+                android:layout_marginBottom="@dimen/activity_vertical_margin"/>
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/button_add_client"
+                android:layout_below="@+id/text_client_address"
+                android:text="@string/button_add_client"
+                style="@style/PrimaryButtonStyle"
+                android:onClick="addClientOnClick"/>
+            
+            <ProgressBar
+                android:layout_width="@dimen/progress_bar_diameter"
+                android:layout_height="@dimen/progress_bar_diameter"
+                android:id="@+id/progressBar"
+                android:layout_centerInParent="true"
+                android:visibility="invisible"/>
+        </RelativeLayout>
+    </ScrollView>
+</RelativeLayout>
