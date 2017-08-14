@@ -176,7 +176,7 @@ public class ClientControlActivity extends BaseActivity{
                 });
             }
             else{
-                Toast.makeText(getApplicationContext(), "There are no currently no Clients added", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), "There are currently no Clients added", Toast.LENGTH_LONG).show();
             }
         }
         catch(Exception exc){

@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -11,7 +12,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".Question1A"></activity>
+        <activity android:name=".Question1A" />
 
         <service
             android:name=".LocationService"
@@ -31,14 +32,10 @@
 
         <activity
             android:name=".Question1B"
-            android:label="@string/title_activity_maps">
-
-        </activity>
-        <activity android:name=".RouteHistoryActivity"></activity>
-        <activity android:name=".CreateAccountActivity"></activity>
-        <activity android:name=".LoginActivity">
-        </activity>
-
+            android:label="@string/title_activity_maps"></activity>
+        <activity android:name=".RouteHistoryActivity" />
+        <activity android:name=".CreateAccountActivity" />
+        <activity android:name=".LoginActivity"></activity>
         <activity
             android:name=".HomeActivity"
             android:label="@string/app_name"
@@ -92,7 +89,11 @@
             android:label="@string/title_activity_help"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity android:name=".RoutePlannerActivity"></activity>
+        <activity android:name=".RoutePlannerActivity" />
+
+        <service
+            android:name=".FirebaseService"
+            android:exported="false"></service>
     </application>
 
 </manifest>

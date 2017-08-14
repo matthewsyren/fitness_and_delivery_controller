@@ -165,7 +165,7 @@ public class DeliveryControlActivity extends BaseActivity {
                 });
             }
             else{
-                Toast.makeText(getApplicationContext(), "There are no currently no Deliveries added", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), "There are currently no Deliveries added", Toast.LENGTH_LONG).show();
             }
         }
         catch(Exception exc){

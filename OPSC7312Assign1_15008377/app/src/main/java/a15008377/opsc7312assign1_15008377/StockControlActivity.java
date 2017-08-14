@@ -11,6 +11,8 @@ package a15008377.opsc7312assign1_15008377;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v4.os.ResultReceiver;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -63,7 +65,7 @@ public class StockControlActivity extends BaseActivity {
             });
 
             //Method populates the Stock report
-            populateViews();
+            requestStockItems();
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -75,7 +77,7 @@ public class StockControlActivity extends BaseActivity {
     public void onResume(){
         try{
             super.onResume();
-            populateViews();
+            requestStockItems();
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -102,47 +104,6 @@ public class StockControlActivity extends BaseActivity {
         }
         catch(Exception exc){
             Toast.makeText(getBaseContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    //Method populates the views that are displayed on this Activity
-    public void populateViews(){
-        try{
-            //Gets reference to Firebase
-            final ArrayList<Stock> lstStock = new ArrayList<>();
-            final FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
-            final DatabaseReference databaseReference = firebaseDatabase.getReference().child(new User(this).getUserKey()).child("stock");
-
-            //Adds Listeners for when the data is changed
-            databaseReference.addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    //Loops through all Stock and adds them to the lstStock ArrayList
-                    Iterable<DataSnapshot> lstSnapshots = dataSnapshot.getChildren();
-                    for(DataSnapshot snapshot : lstSnapshots){
-                        //Retrieves the Stock from Firebase and adds the Stock to an ArrayList of Stock objects
-                        Stock stock = snapshot.getValue(Stock.class);
-                        lstStock.add(stock);
-                    }
-                    databaseReference.removeEventListener(this);
-
-                    //Displays error message if there are no Stock items to display
-                    if(lstStock.size() > 0){
-                        displayStock(lstStock);
-                    }
-                    else{
-                        Toast.makeText(getApplicationContext(), "There are no currently no Stock items added", Toast.LENGTH_LONG).show();
-                    }
-                }
-
-                @Override
-                public void onCancelled(DatabaseError error) {
-                    Log.i("Data", "Failed to read data, please check your internet connection");
-                }
-            });
-        }
-        catch(Exception exc){
-            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -178,6 +139,38 @@ public class StockControlActivity extends BaseActivity {
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public void requestStockItems(){
+        //Requests location information from the LocationService class
+        String firebaseKey = new User(this).getUserKey();
+        Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
+        intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+        intent.setAction(FirebaseService.ACTION_FETCH_STOCK);
+        intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
+        startService(intent);
+    }
+
+    //Creates a ResultReceiver to retrieve information from the LocationService
+    private class DataReceiver extends ResultReceiver {
+        private DataReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData){
+            if(resultCode == FirebaseService.ACTION_FETCH_STOCK_RESULT_CODE){
+                ArrayList<Stock> lstStock = (ArrayList<Stock>) resultData.getSerializable(FirebaseService.ACTION_FETCH_STOCK);
+
+                //Displays error message if there are no Stock items to display
+                if(lstStock.size() > 0){
+                    displayStock(lstStock);
+                }
+                else{
+                    Toast.makeText(getApplicationContext(), "There are currently no Stock items added", Toast.LENGTH_LONG).show();
+                }
+            }
         }
     }
 }
