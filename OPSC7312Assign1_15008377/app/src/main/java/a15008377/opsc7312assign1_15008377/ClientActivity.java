@@ -176,7 +176,7 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         Intent intent = null;
-                        //Loops through all runs and adds them to the lstRuns ArrayList
+                        //Writes the Client details to the Firebase Database
                         if(action.equals("add")){
                             if(dataSnapshot.child(client.getClientID()).exists()){
                                 Toast.makeText(getApplicationContext(), "The Client ID you have entered already exists, please choose another one", Toast.LENGTH_LONG).show();

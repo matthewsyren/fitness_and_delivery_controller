@@ -9,8 +9,11 @@
 package a15008377.opsc7312assign1_15008377;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v4.os.ResultReceiver;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -44,7 +47,6 @@ public class CompletedDeliveryActivity extends BaseActivity {
                         InputMethodManager inputMethodManager = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
                         inputMethodManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
 
-
                         //Displays message to user
                         Toast.makeText(getApplicationContext(), "Search complete!", Toast.LENGTH_LONG).show();
                         return true;
@@ -52,17 +54,7 @@ public class CompletedDeliveryActivity extends BaseActivity {
                     return false;
                 }
             });
-            populateViews();
-        }
-        catch(Exception exc){
-            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    //Method populates the views that are displayed on this Activity
-    public void populateViews(){
-        try{
-            getCompleteDeliveries();
+            requestDeliveries();
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -80,52 +72,54 @@ public class CompletedDeliveryActivity extends BaseActivity {
         }
     }
 
-    //Method fetches all Deliveries and sends them to the displayDeliveries method
-    public void getCompleteDeliveries(){
+    //Method calls the FirebaseService class and requests the Clients from the Firebase Database
+    public void requestDeliveries(){
         try{
-            ArrayList<Delivery> lstDeliveries = Delivery.getDeliveries(this, 1);
-            displayDeliveries(lstDeliveries);
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(this).getUserKey();
+            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_FETCH_DELIVERIES);
+            intent.putExtra(FirebaseService.DELIVERY_COMPLETE, 1);
+            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
+            startService(intent);
         }
         catch(Exception exc){
-            Toast.makeText(getApplicationContext(), exc.getMessage(),Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
     //Method populates the ListView on this Activity
     public void displayDeliveries(final ArrayList<Delivery> lstDeliveries){
         try{
-            if(lstDeliveries.size() > 0){
-                /*DBAdapter dbAdapter = new DBAdapter(this);
-                dbAdapter.open();
-
-                //Loops through Cursor and adds each Delivery item to the lstDeliveries ArrayList
-                for(int i = 0; i < lstDeliveries.size(); i++) {
-                    Cursor deliveryItems = dbAdapter.getDeliveryItems(lstDeliveries.get(i).getDeliveryID());
-                    ArrayList<DeliveryItem> lstDeliveryItems = new ArrayList<>();
-                    if(deliveryItems.moveToFirst()){
-                        do{
-                            DeliveryItem deliveryItem = new DeliveryItem(deliveryItems.getString(0), deliveryItems.getInt(1));
-                            lstDeliveryItems.add(deliveryItem);
-                        }while(deliveryItems.moveToNext());
-
-                        //Sets the DeliveryItems for the Delivery object
-                        lstDeliveries.get(i).setLstDeliveryItems(lstDeliveryItems);
-                    }
-                }
-
-                //Sets the Adapter for the list_view_deliveries ListView
-                DeliveryReportListViewAdapter adapter = new DeliveryReportListViewAdapter(this, lstDeliveries);
-                final ListView listView = (ListView) findViewById(R.id.list_view_completed_deliveries);
-                listView.setAdapter(adapter);
-
-                dbAdapter.close(); */
-            }
-            else{
-                Toast.makeText(getApplicationContext(), "There are no currently no Deliveries that are completed", Toast.LENGTH_LONG).show();
-            }
+            DeliveryReportListViewAdapter adapter = new DeliveryReportListViewAdapter(this, lstDeliveries);
+            ListView listView = (ListView) findViewById(R.id.list_view_completed_deliveries);
+            listView.setAdapter(adapter);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Creates a ResultReceiver to retrieve information from the FirebaseService
+    private class DataReceiver extends ResultReceiver {
+        private DataReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData){
+            if(resultCode == FirebaseService.ACTION_FETCH_DELIVERIES_RESULT_CODE){
+                ArrayList<Delivery> lstDeliveries = (ArrayList<Delivery>) resultData.getSerializable(FirebaseService.ACTION_FETCH_DELIVERIES);
+
+                //Displays error message if there are no Stock items to display
+                if(lstDeliveries.size() > 0){
+                    displayDeliveries(lstDeliveries);
+                }
+                else{
+                    Toast.makeText(getApplicationContext(), "There are currently no Deliveries added", Toast.LENGTH_LONG).show();
+                }
+            }
         }
     }
 }

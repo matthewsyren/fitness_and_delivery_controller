@@ -12,11 +12,15 @@ import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.DataSetObserver;
+import android.media.audiofx.LoudnessEnhancer;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Adapter;
 import android.widget.ArrayAdapter;
@@ -52,8 +56,20 @@ public class DeliveryActivity extends AppCompatActivity {
 
             //Methods display all required information for the Activity
             displayViews();
-            displaySpinnerClients();
-            getStockItems();
+            requestStockItems();
+            requestClients();
+
+            //Makes ListView scrollable in a ScrollView (see https://stackoverflow.com/questions/18367522/android-list-view-inside-a-scroll-view)
+            ListView listView = (ListView) findViewById(R.id.list_view_delivery_items);
+            listView.setOnTouchListener(new View.OnTouchListener() {
+                //Sets onTouchListener to allow scrolling in the ListView within a ScrollView
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    // Disallow the touch request for parent scroll on touch of child view
+                    v.getParent().requestDisallowInterceptTouchEvent(true);
+                    return false;
+                }
+            });
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -79,6 +95,22 @@ public class DeliveryActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    //Method calls the FirebaseService class and requests the Clients from the Firebase Database
+    public void requestClients(){
+        try{
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(this).getUserKey();
+            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_FETCH_CLIENTS);
+            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
+            startService(intent);
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     //Method alters Activity based on the action the user is performing
     public void displayViews(){
         try{
@@ -95,6 +127,7 @@ public class DeliveryActivity extends AppCompatActivity {
                 button.setText(R.string.button_update_delivery);
                 Delivery delivery = (Delivery) bundle.getSerializable("deliveryObject");
                 displayDelivery(delivery);
+                displayDeliveryItems(delivery.getLstDeliveryItems());
             }
             else if(action.equals("add")){
                 button.setText(R.string.button_add_delivery);
@@ -109,7 +142,7 @@ public class DeliveryActivity extends AppCompatActivity {
                     @Override
                     public void onChanged() {
                         super.onChanged();
-                        getStockItems();
+                        requestStockItems();
                     }
                 });
             }
@@ -135,7 +168,6 @@ public class DeliveryActivity extends AppCompatActivity {
             //Populate view data
             txtDeliveryID.setText(delivery.getDeliveryID());
             txtDeliveryDate.setText(delivery.getDeliveryDate());
-            displayDeliveryItems(delivery.getDeliveryID());
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -143,83 +175,31 @@ public class DeliveryActivity extends AppCompatActivity {
     }
 
     //Method populates the spinner_delivery_client with all available clients
-    public void displaySpinnerClients(){
+    public void displaySpinnerClients(ArrayList<Client> lstClients){
         try{
-            //Gets reference to Firebase
-            final ArrayList<String> lstClients = new ArrayList<>();
-            final FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
-            final DatabaseReference databaseReference = firebaseDatabase.getReference().child(new User(this).getUserKey()).child("clients");
-
-            //Adds Listeners for when the data is changed
-            databaseReference.addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    //Loops through all Clients and adds them to the lstClients ArrayList
-                    Iterable<DataSnapshot> lstSnapshots = dataSnapshot.getChildren();
-                    for(DataSnapshot snapshot : lstSnapshots){
-                        //Retrieves the Clients from Firebase and adds the Clients to an ArrayList of Client objects
-                        Client client = snapshot.getValue(Client.class);
-                        lstClients.add(client.getClientID() + " - " + client.getClientName());
-                    }
-                    databaseReference.removeEventListener(this);
-
-                    //Displays error message if there are no Clients to display
-                    if(lstClients.size() > 0){
-                        //Sets Adapter for the Spinner using lstClients
-                        ArrayAdapter adapter = new ArrayAdapter<>(getApplicationContext(), R.layout.spinner_row, R.id.text_spinner_item_id, lstClients);
-                        Spinner spinner = (Spinner) findViewById(R.id.spinner_delivery_client);
-                        spinner.setAdapter(adapter);
-                    }
-                    else{
-                        Toast.makeText(getApplicationContext(), "There are currently no Clients added", Toast.LENGTH_LONG).show();
-                    }
-                }
-
-                @Override
-                public void onCancelled(DatabaseError error) {
-                    Log.i("Data", "Failed to read data, please check your internet connection");
-                }
-            });
+            //Sets Adapter for the Spinner using lstClients
+            ArrayAdapter adapter = new ArrayAdapter<>(getApplicationContext(), R.layout.spinner_row, R.id.text_spinner_item_id);
+            for(int i = 0; i < lstClients.size(); i++){
+                adapter.add(lstClients.get(i).getClientID() + " - " + lstClients.get(i).getClientName());
+            }
+            Spinner spinner = (Spinner) findViewById(R.id.spinner_delivery_client);
+            spinner.setAdapter(adapter);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
-    public void getStockItems(){
+    //Requests Stock Items from the Firebase Database
+    public void requestStockItems(){
         try{
-            //Gets reference to Firebase
-            final ArrayList<Stock> lstStock = new ArrayList<>();
-            final FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
-            final DatabaseReference databaseReference = firebaseDatabase.getReference().child(new User(this).getUserKey()).child("stock");
-
-            //Adds Listeners for when the data is changed
-            databaseReference.addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    //Loops through all Stock and adds them to the lstStock ArrayList
-                    Iterable<DataSnapshot> lstSnapshots = dataSnapshot.getChildren();
-                    for(DataSnapshot snapshot : lstSnapshots){
-                        //Retrieves the Stock from Firebase and adds the Stock to an ArrayList of Stock objects
-                        Stock stock = snapshot.getValue(Stock.class);
-                        lstStock.add(stock);
-                    }
-                    databaseReference.removeEventListener(this);
-
-                    //Displays error message if there are no Stock items to display
-                    if(lstStock.size() > 0){
-                        displaySpinnerDeliveryItems(lstStock);
-                    }
-                    else{
-                        Toast.makeText(getApplicationContext(), "There are no currently no Stock items added", Toast.LENGTH_LONG).show();
-                    }
-                }
-
-                @Override
-                public void onCancelled(DatabaseError error) {
-                    Log.i("Data", "Failed to read data, please check your internet connection");
-                }
-            });
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(this).getUserKey();
+            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_FETCH_STOCK);
+            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
+            startService(intent);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -261,34 +241,20 @@ public class DeliveryActivity extends AppCompatActivity {
     }
 
     //Method displays the Delivery's selected items in the list_view_delivery_items
-    public void displayDeliveryItems(String deliveryID){
+    public void displayDeliveryItems(ArrayList<DeliveryItem> lstDeliveryItems){
         try{
-            /*DBAdapter dbAdapter = new DBAdapter(this);
-            dbAdapter.open();
-            Cursor cursor = dbAdapter.getDeliveryItems(deliveryID);
-            ArrayList<DeliveryItem> lstDeliveryItems = new ArrayList<>();
+            //Sets adapter for the ListView
+            DeliveryItemListViewAdapter deliveryItemListViewAdapter = new DeliveryItemListViewAdapter(this, lstDeliveryItems);
+            ListView listView = (ListView) findViewById(R.id.list_view_delivery_items);
+            listView.setAdapter(deliveryItemListViewAdapter);
 
-            if(cursor.moveToFirst()){
-                do{
-                    DeliveryItem deliveryItem = new DeliveryItem(cursor.getString(0), cursor.getInt(1));
-                    lstDeliveryItems.add(deliveryItem);
-                }while(cursor.moveToNext());
-
-                //Sets adapter for the ListView
-                DeliveryItemListViewAdapter deliveryItemListViewAdapter = new DeliveryItemListViewAdapter(this, lstDeliveryItems);
-                ListView listView = (ListView) findViewById(R.id.list_view_delivery_items);
-                listView.setAdapter(deliveryItemListViewAdapter);
-
-                //Sets DataSetObserver for the ListView's adapter, which will update the items displayed in the Spinner for Delivery Items whenever an item is added to/removed from the ListView
-                deliveryItemListViewAdapter.registerDataSetObserver(new DataSetObserver() {
-                    @Override
-                    public void onChanged() {
-                        super.onChanged();
-                        displaySpinnerDeliveryItems();
-                    }
-                });
-            }
-            dbAdapter.close(); */
+            //Sets DataSetObserver for the ListView's adapter, which will update the items displayed in the Spinner for Delivery Items whenever an item is added to/removed from the ListView
+            deliveryItemListViewAdapter.registerDataSetObserver(new DataSetObserver() {
+                @Override
+                public void onChanged() {
+                    super.onChanged();
+                }
+            });
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -478,7 +444,7 @@ public class DeliveryActivity extends AppCompatActivity {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {
                             Intent intent = null;
-                            //Loops through all runs and adds them to the lstRuns ArrayList
+                            //Writes the Delivery details to the Firebase database
                             if(action.equals("add")){
                                 if(dataSnapshot.child(delivery.getDeliveryID()).exists()){
                                     Toast.makeText(getApplicationContext(), "The Delivery ID you have entered already exists, please choose another one", Toast.LENGTH_LONG).show();
@@ -581,6 +547,39 @@ public class DeliveryActivity extends AppCompatActivity {
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Creates a ResultReceiver to retrieve information from the FirebaseService
+    private class DataReceiver extends ResultReceiver {
+        private DataReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData){
+            if(resultCode == FirebaseService.ACTION_FETCH_STOCK_RESULT_CODE){
+                ArrayList<Stock> lstStock = (ArrayList<Stock>) resultData.getSerializable(FirebaseService.ACTION_FETCH_STOCK);
+
+                //Displays error message if there are no Stock items to display
+                if(lstStock.size() > 0){
+                    displaySpinnerDeliveryItems(lstStock);
+                }
+                else{
+                    Toast.makeText(getApplicationContext(), "There are currently no Stock items added", Toast.LENGTH_LONG).show();
+                }
+            }
+            else if(resultCode == FirebaseService.ACTION_FETCH_CLIENTS_RESULT_CODE){
+                ArrayList<Client> lstClients = (ArrayList<Client>) resultData.getSerializable(FirebaseService.ACTION_FETCH_CLIENTS);
+
+                //Displays error message if there are no Stock items to display
+                if(lstClients.size() > 0){
+                    displaySpinnerClients(lstClients);
+                }
+                else{
+                    Toast.makeText(getApplicationContext(), "There are currently no Clients added", Toast.LENGTH_LONG).show();
+                }
+            }
         }
     }
 }

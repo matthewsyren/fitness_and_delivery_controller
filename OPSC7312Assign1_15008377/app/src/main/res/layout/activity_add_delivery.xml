@@ -9,18 +9,13 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
+    android:descendantFocusability="beforeDescendants"
+    android:focusableInTouchMode="true"
     tools:context="a15008377.opsc7312assign1_15008377.DeliveryActivity">
-<RelativeLayout
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_weight="1">
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
         android:layout_marginBottom="26dp"
         android:fadeScrollbars="false">
         <RelativeLayout
@@ -125,34 +120,30 @@
                     android:onClick="addDeliveryItemOnClick"
                     style="@style/SecondaryButtonStyle"/>
 
+            <TextView
+                android:id="@+id/text_delivery_items"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/HeadingTextStyle"
+                android:text="Delivery Items"
+                android:gravity="center_horizontal"
+                android:textColor="@color/black"
+                android:layout_below="@+id/button_add_delivery_item"/>
+            <ListView
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:id="@+id/list_view_delivery_items"
+                android:fadeScrollbars="false"
+                android:layout_below="@id/text_delivery_items"/>
+
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button_add_delivery"
                 android:text="@string/button_add_delivery"
-                android:layout_below="@+id/button_add_delivery_item"
+                android:layout_below="@+id/list_view_delivery_items"
                 android:onClick="addDeliveryOnClick"
                 style="@style/PrimaryButtonStyle"/>
         </RelativeLayout>
     </ScrollView>
-</RelativeLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1.5"
-        android:orientation="vertical"
-        android:background="@color/gray">
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            style="@style/HeadingTextStyle"
-            android:text="Delivery Items"
-            android:gravity="center_horizontal"
-            android:textColor="@color/black"/>
-        <ListView
-            android:layout_width="match_parent"
-            android:layout_height="150dp"
-            android:id="@+id/list_view_delivery_items"
-            android:fadeScrollbars="false"/>
     </LinearLayout>
-</LinearLayout>

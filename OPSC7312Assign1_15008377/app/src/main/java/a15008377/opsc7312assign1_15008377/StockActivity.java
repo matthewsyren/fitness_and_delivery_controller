@@ -137,7 +137,7 @@ public class StockActivity extends AppCompatActivity {
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         Intent intent = null;
                         boolean valid = true;
-                        //Loops through all runs and adds them to the lstRuns ArrayList
+                        //Writes the Stock details to the Firebase Database
                         if(action.equals("add")){
                             if(dataSnapshot.child(stock.getStockID()).exists()){
                                 Toast.makeText(getApplicationContext(), "The Stock ID you have entered already exists, please choose another one", Toast.LENGTH_LONG).show();

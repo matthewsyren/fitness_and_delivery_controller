@@ -5,6 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
+    android:descendantFocusability="beforeDescendants"
+    android:focusableInTouchMode="true"
     tools:context="a15008377.opsc7312assign1_15008377.CompletedDeliveryActivity">
 
     <android.support.design.widget.AppBarLayout

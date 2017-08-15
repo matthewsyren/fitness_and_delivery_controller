@@ -5,6 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
+    android:descendantFocusability="beforeDescendants"
+    android:focusableInTouchMode="true"
     tools:context="a15008377.opsc7312assign1_15008377.ClientControlActivity">
 
     <android.support.design.widget.AppBarLayout
@@ -38,7 +40,7 @@
                 android:paddingLeft="@dimen/app_bar_search_padding"
                 android:imeOptions="actionSearch"
                 android:hint="@string/text_client_search_hint"
-                android:maxLines="1"/>
+                android:maxLines="1" />
         </android.support.v7.widget.Toolbar>
 
     </android.support.design.widget.AppBarLayout>

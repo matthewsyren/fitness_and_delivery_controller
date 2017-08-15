@@ -142,17 +142,23 @@ public class StockControlActivity extends BaseActivity {
         }
     }
 
+    //Method calls the FirebaseService class and requests the Stock items from the Firebase Database
     public void requestStockItems(){
-        //Requests location information from the LocationService class
-        String firebaseKey = new User(this).getUserKey();
-        Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
-        intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-        intent.setAction(FirebaseService.ACTION_FETCH_STOCK);
-        intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-        startService(intent);
+        try{
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(this).getUserKey();
+            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_FETCH_STOCK);
+            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
+            startService(intent);
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
-    //Creates a ResultReceiver to retrieve information from the LocationService
+    //Creates a ResultReceiver to retrieve information from the FirebaseService
     private class DataReceiver extends ResultReceiver {
         private DataReceiver(Handler handler) {
             super(handler);

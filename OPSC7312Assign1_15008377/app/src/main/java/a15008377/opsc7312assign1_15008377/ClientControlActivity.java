@@ -12,6 +12,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v4.os.ResultReceiver;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -64,7 +66,7 @@ public class ClientControlActivity extends BaseActivity{
             });
 
             //Populates the views that need to be displayed on the Activity
-            populateViews();
+            requestClients();
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -76,17 +78,7 @@ public class ClientControlActivity extends BaseActivity{
     public void onResume(){
         try{
             super.onResume();
-            populateViews();
-        }
-        catch(Exception exc){
-            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    //Method populates the views that need to be displayed on the Activity
-    public void populateViews(){
-        try{
-            getAllClients();
+            requestClients();
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -115,41 +107,16 @@ public class ClientControlActivity extends BaseActivity{
         }
     }
 
-    //Fetches all the Clients from the database and sends them to the displayClient method
-    public void getAllClients(){
+    //Method calls the FirebaseService class and requests the Clients from the Firebase Database
+    public void requestClients(){
         try{
-            //Gets reference to Firebase
-            final ArrayList<Client> lstClients = new ArrayList<>();
-            final FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
-            final DatabaseReference databaseReference = firebaseDatabase.getReference().child(new User(this).getUserKey()).child("clients");
-
-            //Adds Listeners for when the data is changed
-            databaseReference.addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    //Loops through all Clients and adds them to the lstClients ArrayList
-                    Iterable<DataSnapshot> lstSnapshots = dataSnapshot.getChildren();
-                    for(DataSnapshot snapshot : lstSnapshots){
-                        //Retrieves the Clients from Firebase and adds the Clients to an ArrayList of Client objects
-                        Client client = snapshot.getValue(Client.class);
-                        lstClients.add(client);
-                    }
-                    databaseReference.removeEventListener(this);
-
-                    //Displays error message if there are no Clients to display
-                    if(lstClients.size() > 0){
-                        displayClients(lstClients);
-                    }
-                    else{
-                        Toast.makeText(getApplicationContext(), "There are currently no Clients added", Toast.LENGTH_LONG).show();
-                    }
-                }
-
-                @Override
-                public void onCancelled(DatabaseError error) {
-                    Log.i("Data", "Failed to read data, please check your internet connection");
-                }
-            });
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(this).getUserKey();
+            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_FETCH_CLIENTS);
+            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
+            startService(intent);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -193,6 +160,28 @@ public class ClientControlActivity extends BaseActivity{
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Creates a ResultReceiver to retrieve information from the FirebaseService
+    private class DataReceiver extends ResultReceiver {
+        private DataReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData){
+            if(resultCode == FirebaseService.ACTION_FETCH_CLIENTS_RESULT_CODE){
+                ArrayList<Client> lstClients = (ArrayList<Client>) resultData.getSerializable(FirebaseService.ACTION_FETCH_CLIENTS);
+
+                //Displays error message if there are no Stock items to display
+                if(lstClients.size() > 0){
+                    displayClients(lstClients);
+                }
+                else{
+                    Toast.makeText(getApplicationContext(), "There are currently no Clients added", Toast.LENGTH_LONG).show();
+                }
+            }
         }
     }
 }

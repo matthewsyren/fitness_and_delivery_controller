@@ -97,7 +97,7 @@
     <string name="client_address">Client Address: %s</string>
 
     <!-- DeliveryReportListViewAdapter -->
-    <string name="delivery_id">Stock ID: %s</string>
+    <string name="delivery_id">Delivery ID: %s</string>
     <string name="delivery_client_id">Client ID: %s</string>
     <string name="delivery_date">Delivery Date: %s</string>
     <string name="delivery_complete">Delivery Complete: %s</string>
