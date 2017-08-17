@@ -19,6 +19,7 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 import java.util.ArrayList;
 
@@ -75,6 +76,10 @@ public class CompletedDeliveryActivity extends BaseActivity {
     //Method calls the FirebaseService class and requests the Clients from the Firebase Database
     public void requestDeliveries(){
         try{
+            //Displays ProgressBar
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+            progressBar.setVisibility(View.VISIBLE);
+
             //Requests location information from the LocationService class
             String firebaseKey = new User(this).getUserKey();
             Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
@@ -119,6 +124,10 @@ public class CompletedDeliveryActivity extends BaseActivity {
                 else{
                     Toast.makeText(getApplicationContext(), "There are currently no Deliveries added", Toast.LENGTH_LONG).show();
                 }
+
+                //Hides ProgressBar
+                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+                progressBar.setVisibility(View.INVISIBLE);
             }
         }
     }

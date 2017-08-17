@@ -20,11 +20,14 @@ import android.location.LocationManager;
 import android.media.MediaRouter;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.os.ResultReceiver;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -51,6 +54,7 @@ public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IA
     //Declarations
     GoogleMap gMap;
     ArrayList<LocationMarker> lstDestinations;
+    ArrayList<Delivery> lstDeliveries = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,9 +66,8 @@ public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IA
             super.onCreateDrawer();
             super.setSelectedNavItem(R.id.nav_home);
 
-            //Sets up the Map for this Activity
-            SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-            mapFragment.getMapAsync(this);
+            requestDeliveries(null);
+
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -75,11 +78,6 @@ public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IA
     @Override
     public void onMapReady(final GoogleMap googleMap) {
         try{
-            /*DBAdapter dbAdapter = new DBAdapter(this);
-            dbAdapter.open();
-            Cursor deliveryCursor = dbAdapter.getAllDeliveries();
-            final ArrayList<LocationMarker> lstMarkers = new ArrayList<>();
-
             if(ContextCompat.checkSelfPermission(HomeActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
                 ActivityCompat.requestPermissions(HomeActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PackageManager.PERMISSION_GRANTED);
             }
@@ -93,67 +91,109 @@ public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IA
                 googleMap.setMyLocationEnabled(true);
             }
             gMap = googleMap;
+            final LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
-            //Displays Markers for Deliveries if the user has created any Deliveries
-            if(deliveryCursor.moveToFirst()){
-                final LatLngBounds.Builder builder = new LatLngBounds.Builder();
+            //Displays the markers and sets their titles
+            for(int i = 0; i < lstDestinations.size(); i++){
+                googleMap.addMarker(new MarkerOptions().position(lstDestinations.get(i).getLocation()).title(lstDestinations.get(i).getMarkerTitle()));
+                builder.include(lstDestinations.get(i).getLocation());
+            }
 
-                //Loops through all Deliveries and adds the appropriate ones to lstMarkers
-                do{
-                    String clientID = deliveryCursor.getString(1);
-                    Client client = dbAdapter.getClient(clientID);
-                    Calendar calendar = Calendar.getInstance();
-                    String currentDate = calendar.get(Calendar.DAY_OF_MONTH) + "/" + (calendar.get(Calendar.MONTH) + 1) + "/" + calendar.get(Calendar.YEAR);
-
-                    //Adds Marker to lstMarkers if the Delivery is incomplete and scheduled for the current date
-                    if(client != null && deliveryCursor.getInt(3) == 0 && deliveryCursor.getString(2).equals(currentDate)){
-                        //Creates new Marker and title for Marker, and adds them to appropriate ArrayLists
-                        LatLng clientLocation = new LatLng(client.getClientLatitude(), client.getClientLongitude());
-                        String markerTitle = "Delivery: " + deliveryCursor.getString(0) + "     Client Name: " + client.getClientName();
-                        lstMarkers.add(new LocationMarker(clientLocation, markerTitle));
-                        builder.include(clientLocation);
-                }
-                }while(deliveryCursor.moveToNext());
-
-                //Displays the markers and sets their titles
-                for(int i = 0; i < lstMarkers.size(); i++){
-                    googleMap.addMarker(new MarkerOptions().position(lstMarkers.get(i).getLocation()).title(lstMarkers.get(i).getMarkerTitle()));
-                }
-
-                lstDestinations = lstMarkers;
-
-                //Animates camera to zoom in on Markers once the map has been loaded
-                final RelativeLayout layout = (RelativeLayout) findViewById(android.R.id.content_home);
-                layout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                    @Override
-                    public void onGlobalLayout() {
-                        try{
-                            //Displays Markers for today's Deliveries, otherwise outputs a message saying no Deliveries have been scheduled for the current date
-                            if(lstMarkers.size() != 0){
-                                LatLngBounds bounds = builder.build();
-                                googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 250));
-                            }
-                            else{
-                                Toast.makeText(getApplicationContext(), "You have no deliveries for today... If you would like to add a delivery, go to the Delivery Control page", Toast.LENGTH_LONG).show();
-                            }
+            //Animates camera to zoom in on Markers once the map has been loaded
+            final RelativeLayout layout = (RelativeLayout) findViewById(R.id.content_home);
+            layout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    try{
+                        //Displays Markers for today's Deliveries, otherwise outputs a message saying no Deliveries have been scheduled for the current date
+                        if(lstDestinations.size() != 0){
+                            LatLngBounds bounds = builder.build();
+                            googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 250));
                         }
-                        catch(IllegalStateException ise){
-                            Toast.makeText(getApplicationContext(), ise.getMessage(), Toast.LENGTH_LONG).show();
+                        else{
+                            Toast.makeText(getApplicationContext(), "You have no deliveries for today... If you would like to add a delivery, go to the Delivery Control page", Toast.LENGTH_LONG).show();
                         }
-
-                        //Removes OnGlobalLayoutListener to prevent recurrent animations on the map
-                        layout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                     }
-                });
-            }
-            else{
-                Toast.makeText(getApplicationContext(), "You have no deliveries for today... If you would like to add a delivery, go to the Delivery Control page", Toast.LENGTH_LONG).show();
-            }
-            dbAdapter.close(); */
+                    catch(IllegalStateException ise){
+                        Toast.makeText(getApplicationContext(), ise.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+
+                    //Removes OnGlobalLayoutListener to prevent recurrent animations on the map
+                    layout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                }
+            });
         }
         catch(NullPointerException exc){
-            Toast.makeText(getApplicationContext(), "Here" + exc.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
             exc.printStackTrace();
+        }
+    }
+
+    public void displayMarkers(ArrayList<Delivery> lstDeliveries, ArrayList<Client> lstClients){
+        try{
+            final ArrayList<LocationMarker> lstMarkers = new ArrayList<>();
+            Calendar calendar = Calendar.getInstance();
+            String currentDate = calendar.get(Calendar.DAY_OF_MONTH) + "/" + (calendar.get(Calendar.MONTH) + 1) + "/" + calendar.get(Calendar.YEAR);
+
+            for(Delivery delivery : lstDeliveries){
+                if(delivery.getDeliveryDate().equals(currentDate)){
+                    for(Client client : lstClients){
+                        if(client.getClientID().equals(delivery.getDeliveryClientID())){
+                            LatLng latLng = new LatLng(client.getClientLatitude(), client.getClientLongitude());
+                            String markerTitle = "Delivery: " + delivery.getDeliveryID() + "     Client Name: " + client.getClientName();
+                            lstMarkers.add(new LocationMarker(latLng, markerTitle));
+                        }
+                    }
+                }
+            }
+
+            lstDestinations = lstMarkers;
+            //Sets up the Map for this Activity
+            SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+            mapFragment.getMapAsync(this);
+
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Method calls the FirebaseService class and requests the Deliveries from the Firebase Database
+    public void requestDeliveries(String searchTerm){
+        try{
+            //Displays ProgressBar
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+            progressBar.setVisibility(View.VISIBLE);
+
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(this).getUserKey();
+            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_FETCH_DELIVERIES);
+            intent.putExtra(FirebaseService.DELIVERY_COMPLETE, 0);
+            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
+            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
+            startService(intent);
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Method calls the FirebaseService class and requests the Clients from the Firebase Database
+    public void requestClients(String searchTerm){
+        try{
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(this).getUserKey();
+            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_FETCH_CLIENTS);
+            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
+            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
+            startService(intent);
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -221,6 +261,31 @@ public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IA
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Creates a ResultReceiver to retrieve information from the FirebaseService
+    private class DataReceiver extends ResultReceiver {
+        private DataReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData){
+            if(resultCode == FirebaseService.ACTION_FETCH_DELIVERIES_RESULT_CODE){
+                lstDeliveries = (ArrayList<Delivery>) resultData.getSerializable(FirebaseService.ACTION_FETCH_DELIVERIES);
+
+                //displayMarkers(lstDeliveries);
+                requestClients(null);
+            }
+            else if(resultCode == FirebaseService.ACTION_FETCH_CLIENTS_RESULT_CODE){
+                ArrayList<Client> lstClients = (ArrayList<Client>) resultData.getSerializable(FirebaseService.ACTION_FETCH_CLIENTS);
+                displayMarkers(lstDeliveries, lstClients);
+            }
+
+            //Hides ProgressBar
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+            progressBar.setVisibility(View.INVISIBLE);
         }
     }
 }

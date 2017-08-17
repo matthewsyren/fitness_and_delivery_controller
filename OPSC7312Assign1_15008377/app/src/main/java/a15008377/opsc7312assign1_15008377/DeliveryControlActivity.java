@@ -14,6 +14,8 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -21,6 +23,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
@@ -43,27 +46,25 @@ public class DeliveryControlActivity extends BaseActivity {
             super.onCreateDrawer();
             super.setSelectedNavItem(R.id.nav_delivery_control);
 
-            //Sets the onKeyListener for the text_search_client, which will perform a search when the enter key is pressed
+            //Sets the TextChangedListener for the text_search_delivery, which will perform a search when a key is pressed
             final EditText txtSearchDelivery = (EditText) findViewById(R.id.text_search_delivery);
-            txtSearchDelivery.setOnKeyListener(new View.OnKeyListener() {
+            txtSearchDelivery.addTextChangedListener(new TextWatcher() {
                 @Override
-                public boolean onKey(View v, int keyCode, KeyEvent event) {
-                    if(keyCode == KeyEvent.KEYCODE_ENTER){
-                        String searchTerm = txtSearchDelivery.getText().toString();
-                        searchDeliveries(searchTerm);
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
-                        //Hides keyboard once search is completed
-                        InputMethodManager inputMethodManager = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-                        inputMethodManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                }
 
-                        //Displays message to user
-                        Toast.makeText(getApplicationContext(), "Search complete!", Toast.LENGTH_LONG).show();
-                        return true;
-                    }
-                    return false;
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    searchDeliveries(txtSearchDelivery);
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+
                 }
             });
-            requestDeliveries();
+            requestDeliveries(null);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -75,7 +76,7 @@ public class DeliveryControlActivity extends BaseActivity {
     public void onResume(){
         try{
             super.onResume();
-            requestDeliveries();
+            requestDeliveries(null);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -83,10 +84,11 @@ public class DeliveryControlActivity extends BaseActivity {
     }
 
     //Method fetches the Deliveries that match the search result and send them to the displayDeliveries method
-    public void searchDeliveries(String searchTerm){
+    public void searchDeliveries(EditText txtSearchDelivery){
         try{
-            ArrayList<Delivery> lstSearchResults = Delivery.searchDeliveries(searchTerm, this, 0);
-            displayDeliveries(lstSearchResults);
+            //Fetches the search term and requests Deliveries that match the search term
+            String searchTerm = txtSearchDelivery.getText().toString();
+            requestDeliveries(searchTerm);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(),Toast.LENGTH_LONG).show();
@@ -94,14 +96,19 @@ public class DeliveryControlActivity extends BaseActivity {
     }
 
     //Method calls the FirebaseService class and requests the Clients from the Firebase Database
-    public void requestDeliveries(){
+    public void requestDeliveries(String searchTerm){
         try{
+            //Displays ProgressBar
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+            progressBar.setVisibility(View.VISIBLE);
+
             //Requests location information from the LocationService class
             String firebaseKey = new User(this).getUserKey();
             Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
             intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
             intent.setAction(FirebaseService.ACTION_FETCH_DELIVERIES);
             intent.putExtra(FirebaseService.DELIVERY_COMPLETE, 0);
+            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
             intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
             startService(intent);
         }
@@ -156,13 +163,18 @@ public class DeliveryControlActivity extends BaseActivity {
             if(resultCode == FirebaseService.ACTION_FETCH_DELIVERIES_RESULT_CODE){
                 ArrayList<Delivery> lstDeliveries = (ArrayList<Delivery>) resultData.getSerializable(FirebaseService.ACTION_FETCH_DELIVERIES);
 
-                //Displays error message if there are no Stock items to display
-                if(lstDeliveries.size() > 0){
-                    displayDeliveries(lstDeliveries);
-                }
-                else{
+                //Displays error message if there are no Delivery items to display
+                if(lstDeliveries.size() == 0){
                     Toast.makeText(getApplicationContext(), "There are currently no Deliveries added", Toast.LENGTH_LONG).show();
                 }
+                else{
+                    Toast.makeText(getApplicationContext(), "Deliveries fetched", Toast.LENGTH_LONG).show();
+                }
+                displayDeliveries(lstDeliveries);
+
+                //Hides ProgressBar
+                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+                progressBar.setVisibility(View.INVISIBLE);
             }
         }
     }

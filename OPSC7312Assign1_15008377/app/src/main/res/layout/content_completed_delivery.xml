@@ -25,4 +25,11 @@
         android:id="@+id/list_view_completed_deliveries"
         android:layout_below="@+id/text_completed_delivery_report_heading"
         android:fadeScrollbars="false"/>
+
+    <ProgressBar
+        android:layout_width="@dimen/progress_bar_diameter"
+        android:layout_height="@dimen/progress_bar_diameter"
+        android:id="@+id/progressBar"
+        android:layout_centerInParent="true"
+        android:visibility="invisible"/>
 </RelativeLayout>

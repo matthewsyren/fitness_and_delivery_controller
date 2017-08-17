@@ -14,6 +14,8 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -21,6 +23,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 import android.view.View.OnKeyListener;
 
@@ -44,29 +47,27 @@ public class ClientControlActivity extends BaseActivity{
             super.onCreateDrawer();
             super.setSelectedNavItem(R.id.nav_client_control);
 
-            //Sets the onKeyListener for the text_search_client, which will perform a search when the enter key is pressed
+            //Sets the TextChangedListener for the text_search_client, which will perform a search when a key is pressed
             final EditText txtSearchClient = (EditText) findViewById(R.id.text_search_client);
-            txtSearchClient.setOnKeyListener(new OnKeyListener() {
+            txtSearchClient.addTextChangedListener(new TextWatcher() {
                 @Override
-                public boolean onKey(View v, int keyCode, KeyEvent event) {
-                    if(keyCode == KeyEvent.KEYCODE_ENTER){
-                        String searchTerm = txtSearchClient.getText().toString();
-                        searchClients(searchTerm);
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
-                        //Hides keyboard one search is completed
-                        InputMethodManager inputMethodManager = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-                        inputMethodManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                }
 
-                        //Displays message to user
-                        Toast.makeText(getApplicationContext(), "Search complete!", Toast.LENGTH_LONG).show();
-                        return true;
-                    }
-                    return false;
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    searchClients(txtSearchClient);
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+
                 }
             });
 
             //Populates the views that need to be displayed on the Activity
-            requestClients();
+            requestClients(null);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -78,7 +79,7 @@ public class ClientControlActivity extends BaseActivity{
     public void onResume(){
         try{
             super.onResume();
-            requestClients();
+            requestClients(null);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -86,21 +87,11 @@ public class ClientControlActivity extends BaseActivity{
     }
 
     //Method fetches an ArrayList of the Clients that match the search term entered by the user
-    public void searchClients(String searchTerm){
+    public void searchClients(EditText txtSearchClient){
         try{
-            /*DBAdapter dbAdapter = new DBAdapter(this);
-            dbAdapter.open();
-            Cursor cursor = dbAdapter.searchClients(searchTerm);
-            ArrayList<Client> lstSearchResults = new ArrayList<>();
-
-            if(cursor.moveToFirst()){
-                do{
-                    Client client = new Client(cursor.getString(0), cursor.getString(1), cursor.getString(2), cursor.getString(3));
-                    lstSearchResults.add(client);
-                }while(cursor.moveToNext());
-            }
-            dbAdapter.close();
-            displayClients(lstSearchResults); */
+            //Fetches the search term and requests Clients that match the search term
+            String searchTerm = txtSearchClient.getText().toString();
+            requestClients(searchTerm);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -108,13 +99,18 @@ public class ClientControlActivity extends BaseActivity{
     }
 
     //Method calls the FirebaseService class and requests the Clients from the Firebase Database
-    public void requestClients(){
+    public void requestClients(String searchTerm){
         try{
+            //Displays ProgressBar
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+            progressBar.setVisibility(View.VISIBLE);
+
             //Requests location information from the LocationService class
             String firebaseKey = new User(this).getUserKey();
             Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
             intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
             intent.setAction(FirebaseService.ACTION_FETCH_CLIENTS);
+            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
             intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
             startService(intent);
         }
@@ -175,12 +171,17 @@ public class ClientControlActivity extends BaseActivity{
                 ArrayList<Client> lstClients = (ArrayList<Client>) resultData.getSerializable(FirebaseService.ACTION_FETCH_CLIENTS);
 
                 //Displays error message if there are no Stock items to display
-                if(lstClients.size() > 0){
-                    displayClients(lstClients);
-                }
-                else{
+                if(lstClients.size() == 0){
                     Toast.makeText(getApplicationContext(), "There are currently no Clients added", Toast.LENGTH_LONG).show();
                 }
+                else{
+                    Toast.makeText(getApplicationContext(), "Clients fetched", Toast.LENGTH_LONG).show();
+                }
+                displayClients(lstClients);
+
+                //Hides ProgressBar
+                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+                progressBar.setVisibility(View.INVISIBLE);
             }
         }
     }

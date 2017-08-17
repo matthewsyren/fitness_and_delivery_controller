@@ -10,6 +10,8 @@ package a15008377.opsc7312assign1_15008377;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -17,6 +19,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
@@ -117,6 +120,9 @@ public class StockActivity extends AppCompatActivity {
     //Method adds/updates the Stock details to the database
     public void addStockOnClick(View view) {
         try{
+            final ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+            progressBar.setVisibility(View.VISIBLE);
+
             EditText txtStockID = (EditText) findViewById(R.id.text_stock_id);
             EditText txtStockDescription = (EditText) findViewById(R.id.text_stock_description);
             EditText txtStockQuantity = (EditText) findViewById(R.id.text_stock_quantity);
@@ -135,34 +141,19 @@ public class StockActivity extends AppCompatActivity {
                 databaseReference.addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                        Intent intent = null;
                         boolean valid = true;
                         //Writes the Stock details to the Firebase Database
                         if(action.equals("add")){
                             if(dataSnapshot.child(stock.getStockID()).exists()){
-                                Toast.makeText(getApplicationContext(), "The Stock ID you have entered already exists, please choose another one", Toast.LENGTH_LONG).show();
+                                Toast.makeText(getApplicationContext(), "The Stock ID has already been used, please choose another Stock ID", Toast.LENGTH_LONG).show();
                                 valid = false;
-                            }
-                            else{
-                                databaseReference.child(stock.getStockID()).setValue(stock);
-                                Toast.makeText(getApplicationContext(), "Stock successfully added", Toast.LENGTH_LONG).show();
-
-                                //Restarts Activity (clears Views to allow user to enter another Stock item)
-                                intent = getIntent();
-                                finish();
+                                progressBar.setVisibility(View.INVISIBLE);
                             }
                         }
-                        else{
-                            databaseReference.child(stock.getStockID()).setValue(stock);
-                            Toast.makeText(getApplicationContext(), "Stock successfully updated", Toast.LENGTH_LONG).show();
-
-                            //Takes the user back to the ClientControlActivity once the update is complete
-                            intent = new Intent(StockActivity.this, StockControlActivity.class);
+                        if(valid){
+                            requestUpdateOfStockItem(stock);
                         }
                         databaseReference.removeEventListener(this);
-                        if(valid){
-                            startActivity(intent);
-                        }
                     }
 
                     @Override
@@ -180,17 +171,57 @@ public class StockActivity extends AppCompatActivity {
         }
     }
 
-    //Method writes the stock information to the Stock.txt file
-    public void writeToFile(String stockID, String stockDescription, int stockQuantity){
+    //Method calls the FirebaseService class and passes in a Stock object that must be written to the Firebase database
+    public void requestUpdateOfStockItem(Stock stock){
         try{
-            File file = new File(getFilesDir(), "Stock.txt");
-            FileOutputStream fileOutputStream = openFileOutput(file.getName(), MODE_APPEND);
-            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream);
-            outputStreamWriter.write(stockID + "|" + stockDescription + "|" + stockQuantity + "\n");
-            outputStreamWriter.close();
+            //Displays ProgressBar
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+            progressBar.setVisibility(View.VISIBLE);
+
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(this).getUserKey();
+            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_UPDATE_STOCK);
+            intent.putExtra(FirebaseService.ACTION_UPDATE_STOCK, stock);
+            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
+            startService(intent);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Creates a ResultReceiver to retrieve information from the FirebaseService
+    private class DataReceiver extends ResultReceiver {
+        private DataReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData){
+
+            if(resultCode == FirebaseService.ACTION_UPDATE_STOCK_RESULT_CODE){
+                Intent intent = null;
+
+                if(action.equals("add")){
+                    Toast.makeText(getApplicationContext(), "Stock successfully added", Toast.LENGTH_LONG).show();
+                    intent = getIntent();
+                    finish();
+                }
+                else{
+                    Toast.makeText(getApplicationContext(), "Stock successfully updated", Toast.LENGTH_LONG).show();
+
+                    //Takes the user back to the ClientControlActivity once the update is complete
+                    intent = new Intent(StockActivity.this, StockControlActivity.class);
+                }
+
+                //Hides ProgressBar
+                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+                progressBar.setVisibility(View.INVISIBLE);
+
+                startActivity(intent);
+            }
         }
     }
 }

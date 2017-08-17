@@ -28,6 +28,7 @@ import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -283,6 +284,10 @@ public class DeliveryActivity extends AppCompatActivity {
     //Method adds/updates the Delivery details to the database
     public void addDeliveryOnClick(View view){
         try {
+            //Displays ProgressBar
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+            progressBar.setVisibility(View.VISIBLE);
+
             //Gets reference to Firebase
             final ArrayList<Stock> lstStock = new ArrayList<>();
             final FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
@@ -383,7 +388,6 @@ public class DeliveryActivity extends AppCompatActivity {
             EditText txtDeliveryID = (EditText) findViewById(R.id.text_delivery_id);
             TextView txtDeliveryDate = (TextView) findViewById(R.id.text_delivery_date);
             Spinner spinner = (Spinner) findViewById(R.id.spinner_delivery_client);
-            Intent intent = null;
             boolean enoughStock = true;
 
             //Assigns values to the Delivery object
@@ -444,31 +448,25 @@ public class DeliveryActivity extends AppCompatActivity {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {
                             Intent intent = null;
+                            boolean valid = true;
+
                             //Writes the Delivery details to the Firebase database
-                            if(action.equals("add")){
-                                if(dataSnapshot.child(delivery.getDeliveryID()).exists()){
-                                    Toast.makeText(getApplicationContext(), "The Delivery ID you have entered already exists, please choose another one", Toast.LENGTH_LONG).show();
+                            if(action.equals("add")) {
+                                if (dataSnapshot.child(delivery.getDeliveryID()).exists()) {
+                                    Toast.makeText(getApplicationContext(), "The Delivery ID you have entered has already been used, please choose another one", Toast.LENGTH_LONG).show();
+                                    valid = false;
+
+                                    //Hides ProgressBar
+                                    ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
+                                    progressBar.setVisibility(View.INVISIBLE);
                                 }
-                                else{
-                                    databaseReference.child(delivery.getDeliveryID()).setValue(delivery);
-                                    Toast.makeText(getApplicationContext(), "Delivery successfully added", Toast.LENGTH_LONG).show();
-
-                                    updateStockLevels(lstUpdatedStockItems);
-
-                                    //Restarts Activity (clears Views to allow user to enter another Delivery)
-                                    intent = getIntent();
-                                    finish();
-                                }
-                            }
-                            else{
-                                databaseReference.child(delivery.getDeliveryID()).setValue(delivery);
-                                Toast.makeText(getApplicationContext(), "Delivery successfully updated", Toast.LENGTH_LONG).show();
-
-                                //Takes the user back to the ClientControlActivity once the update is complete
-                                intent = new Intent(DeliveryActivity.this, DeliveryControlActivity.class);
                             }
                             databaseReference.removeEventListener(this);
-                            startActivity(intent);
+
+                            if(valid){
+                                requestUpdateOfDelivery(delivery);
+                                //updateStockLevels(lstUpdatedStockItems);
+                            }
                         }
 
                         @Override
@@ -518,6 +516,27 @@ public class DeliveryActivity extends AppCompatActivity {
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    //Method calls the FirebaseService class and passes in a Delivery object that must be written to the Firebase database
+    public void requestUpdateOfDelivery(Delivery delivery){
+        try{
+            //Displays ProgressBar
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+            progressBar.setVisibility(View.VISIBLE);
+
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(this).getUserKey();
+            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_UPDATE_DELIVERY);
+            intent.putExtra(FirebaseService.ACTION_UPDATE_DELIVERY, delivery);
+            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
+            startService(intent);
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -579,6 +598,27 @@ public class DeliveryActivity extends AppCompatActivity {
                 else{
                     Toast.makeText(getApplicationContext(), "There are currently no Clients added", Toast.LENGTH_LONG).show();
                 }
+            }
+            else if(resultCode == FirebaseService.ACTION_UPDATE_DELIVERY_RESULT_CODE){
+                Intent intent = null;
+
+                if(action.equals("add")){
+                    Toast.makeText(getApplicationContext(), "Delivery successfully added", Toast.LENGTH_LONG).show();
+                    intent = getIntent();
+                    finish();
+                }
+                else{
+                    Toast.makeText(getApplicationContext(), "Delivery successfully updated", Toast.LENGTH_LONG).show();
+
+                    //Takes the user back to the ClientControlActivity once the update is complete
+                    intent = new Intent(DeliveryActivity.this, DeliveryControlActivity.class);
+                }
+
+                //Hides ProgressBar
+                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+                progressBar.setVisibility(View.INVISIBLE);
+
+                startActivity(intent);
             }
         }
     }

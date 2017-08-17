@@ -13,6 +13,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -20,6 +22,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
@@ -43,29 +46,27 @@ public class StockControlActivity extends BaseActivity {
             super.onCreateDrawer();
             super.setSelectedNavItem(R.id.nav_stock_control);
 
-            //Sets the onKeyListener for the text_search_stock, which will perform a search when the enter key is pressed
+            //Sets the TextChangedListener for the text_search_stock, which will perform a search when the enter key is pressed
             final EditText txtSearchStock = (EditText) findViewById(R.id.text_search_stock);
-            txtSearchStock.setOnKeyListener(new View.OnKeyListener() {
+            txtSearchStock.addTextChangedListener(new TextWatcher() {
                 @Override
-                public boolean onKey(View v, int keyCode, KeyEvent event) {
-                    if(keyCode == KeyEvent.KEYCODE_ENTER){
-                        String searchTerm = txtSearchStock.getText().toString();
-                        searchStock(searchTerm);
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
-                        //Hides the keybpard once the search is completed
-                        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-                        imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                }
 
-                        //Displays message to the user
-                        Toast.makeText(getApplicationContext(), "Search complete!", Toast.LENGTH_LONG).show();
-                        return true;
-                    }
-                    return false;
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    searchStock(txtSearchStock);
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+
                 }
             });
 
             //Method populates the Stock report
-            requestStockItems();
+            requestStockItems(null);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -77,7 +78,7 @@ public class StockControlActivity extends BaseActivity {
     public void onResume(){
         try{
             super.onResume();
-            requestStockItems();
+            requestStockItems(null);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -85,22 +86,11 @@ public class StockControlActivity extends BaseActivity {
     }
 
     //Method fetches all Stock items that match the search and sends them to the displayStock method
-    public void searchStock(String searchTerm){
+    public void searchStock(EditText txtSearchStock){
         try{
-            ArrayList<Stock> lstStock = Stock.readStockItems(this);
-
-            //Loops through all Stock items and removes the ones that don't match the search term
-            for(int i = 0; i < lstStock.size(); i++){
-                if(!lstStock.get(i).getStockID().contains(searchTerm)){
-                    lstStock.remove(i);
-                    i--;
-                }
-            }
-
-            displayStock(lstStock);
-        }
-        catch(IOException ioe){
-            Toast.makeText(getApplicationContext(), "There are currently no Stock items added", Toast.LENGTH_LONG).show();
+            //Fetches the search term and requests Stock items that match the search term
+            String searchTerm = txtSearchStock.getText().toString();
+            requestStockItems(searchTerm);
         }
         catch(Exception exc){
             Toast.makeText(getBaseContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -143,13 +133,18 @@ public class StockControlActivity extends BaseActivity {
     }
 
     //Method calls the FirebaseService class and requests the Stock items from the Firebase Database
-    public void requestStockItems(){
+    public void requestStockItems(String searchTerm){
         try{
+            //Displays ProgressBar
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+            progressBar.setVisibility(View.VISIBLE);
+
             //Requests location information from the LocationService class
             String firebaseKey = new User(this).getUserKey();
             Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
             intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
             intent.setAction(FirebaseService.ACTION_FETCH_STOCK);
+            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
             intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
             startService(intent);
         }
@@ -170,12 +165,17 @@ public class StockControlActivity extends BaseActivity {
                 ArrayList<Stock> lstStock = (ArrayList<Stock>) resultData.getSerializable(FirebaseService.ACTION_FETCH_STOCK);
 
                 //Displays error message if there are no Stock items to display
-                if(lstStock.size() > 0){
-                    displayStock(lstStock);
-                }
-                else{
+                if(lstStock.size() == 0){
                     Toast.makeText(getApplicationContext(), "There are currently no Stock items added", Toast.LENGTH_LONG).show();
                 }
+                else{
+                    Toast.makeText(getApplicationContext(), "Stock fetched", Toast.LENGTH_LONG).show();
+                }
+                displayStock(lstStock);
+
+                //Hides ProgressBar
+                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+                progressBar.setVisibility(View.INVISIBLE);
             }
         }
     }

@@ -13,6 +13,8 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -142,8 +144,11 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
             //Calls the Google Maps API to determine whether the user has entered a valid address
             if(client.validateClient(this) && checkInternetConnection()){
                 if(action.equals("update") || (action.equals("add") && !client.checkClientID(this))){
+                    //Displays ProgressBar
                     ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
                     progressBar.setVisibility(View.VISIBLE);
+
+                    //Fetches coordinates of address entered by the user from the Google Maps API
                     APIConnection api = new APIConnection();
                     api.delegate = this;
                     api.execute("http://maps.google.com/maps/api/geocode/json?address=" + client.getClientAddress());
@@ -175,30 +180,22 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
                 databaseReference.addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                        Intent intent = null;
+                        boolean valid = true;
+
                         //Writes the Client details to the Firebase Database
-                        if(action.equals("add")){
-                            if(dataSnapshot.child(client.getClientID()).exists()){
-                                Toast.makeText(getApplicationContext(), "The Client ID you have entered already exists, please choose another one", Toast.LENGTH_LONG).show();
-                            }
-                            else{
-                                databaseReference.child(client.getClientID()).setValue(client);
-                                Toast.makeText(getApplicationContext(), "Client successfully added", Toast.LENGTH_LONG).show();
-
-                                //Restarts Activity (clears Views to allow user to enter another Client)
-                                intent = getIntent();
-                                finish();
+                        if(action.equals("add")) {
+                            if (dataSnapshot.child(client.getClientID()).exists()) {
+                                Toast.makeText(getApplicationContext(), "The Client ID you have entered has already been used, please choose another one", Toast.LENGTH_LONG).show();
+                                valid = false;
+                                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
+                                progressBar.setVisibility(View.INVISIBLE);
                             }
                         }
-                        else{
-                            databaseReference.child(client.getClientID()).setValue(client);
-                            Toast.makeText(getApplicationContext(), "Client successfully updated", Toast.LENGTH_LONG).show();
 
-                            //Takes the user back to the ClientControlActivity once the update is complete
-                            intent = new Intent(ClientActivity.this, ClientControlActivity.class);
-                        }
                         databaseReference.removeEventListener(this);
-                        startActivity(intent);
+                        if(valid) {
+                            requestUpdateOfClient(client);
+                        }
                     }
 
                     @Override
@@ -206,38 +203,32 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
                         Log.i("Data", "Failed to read data, please check your internet connection");
                     }
                 });
-              /*  DBAdapter dbAdapter = new DBAdapter(this);
-                dbAdapter.open();
-
-                //Performs appropriate action based on whether the user is adding or updating information
-                if(action.equals("add")){
-                    if(dbAdapter.insertClient(client) >= 0){
-                        Toast.makeText(getApplicationContext(), "Client successfully added", Toast.LENGTH_LONG).show();
-
-                        //Restarts Activity (clears Views to allow user to enter another Client)
-                        intent = getIntent();
-                        finish();
-                    }
-                }
-                else if(action.equals("update")){
-                    if(dbAdapter.updateClient(client.getClientID(), client.getClientName(), client.getClientEmail(), client.getClientAddress(), client.getClientLatitude(), client.getClientLongitude())){
-                        Toast.makeText(getApplicationContext(), "Client successfully updated", Toast.LENGTH_LONG).show();
-
-                        //Takes the user back to the ClientControlActivity once the update is complete
-                        intent = new Intent(ClientActivity.this, ClientControlActivity.class);
-                    }
-                }
-                dbAdapter.close(); */
-                //startActivity(intent);
             }
         }
         catch(Exception exc){
             exc.printStackTrace();
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
-        finally{
+    }
+
+    //Method calls the FirebaseService class and passes in a Client object that must be written to the Firebase database
+    public void requestUpdateOfClient(Client client){
+        try{
+            //Displays ProgressBar
             ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.INVISIBLE);
+            progressBar.setVisibility(View.VISIBLE);
+
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(this).getUserKey();
+            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_UPDATE_CLIENT);
+            intent.putExtra(FirebaseService.ACTION_UPDATE_CLIENT, client);
+            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
+            startService(intent);
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -258,5 +249,38 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
         return connected;
+    }
+
+    //Creates a ResultReceiver to retrieve information from the FirebaseService
+    private class DataReceiver extends ResultReceiver {
+        private DataReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData){
+
+            if(resultCode == FirebaseService.ACTION_UPDATE_CLIENT_RESULT_CODE){
+                Intent intent = null;
+
+                if(action.equals("add")){
+                    Toast.makeText(getApplicationContext(), "Client successfully added", Toast.LENGTH_LONG).show();
+                    intent = getIntent();
+                    finish();
+                }
+                else{
+                    Toast.makeText(getApplicationContext(), "Client successfully updated", Toast.LENGTH_LONG).show();
+
+                    //Takes the user back to the ClientControlActivity once the update is complete
+                    intent = new Intent(ClientActivity.this, ClientControlActivity.class);
+                }
+
+                //Hides ProgressBar
+                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+                progressBar.setVisibility(View.INVISIBLE);
+
+                startActivity(intent);
+            }
+        }
     }
 }

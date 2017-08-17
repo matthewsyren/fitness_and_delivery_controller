@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_add_delivery"
     android:layout_width="match_parent"
@@ -12,15 +11,13 @@
     android:descendantFocusability="beforeDescendants"
     android:focusableInTouchMode="true"
     tools:context="a15008377.opsc7312assign1_15008377.DeliveryActivity">
-
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="26dp"
         android:fadeScrollbars="false">
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="match_parent">
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -144,6 +141,13 @@
                 android:layout_below="@+id/list_view_delivery_items"
                 android:onClick="addDeliveryOnClick"
                 style="@style/PrimaryButtonStyle"/>
+
         </RelativeLayout>
     </ScrollView>
-    </LinearLayout>
+    <ProgressBar
+        android:layout_width="@dimen/progress_bar_diameter"
+        android:layout_height="@dimen/progress_bar_diameter"
+        android:id="@+id/progressBar"
+        android:layout_centerInParent="true"
+        android:visibility="invisible"/>
+</RelativeLayout>

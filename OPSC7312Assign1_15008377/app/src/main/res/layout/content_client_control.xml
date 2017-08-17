@@ -36,4 +36,11 @@
         app:srcCompat="@drawable/ic_add"
         android:background="@color/colorPrimary"
         android:onClick="addClientOnClick"/>
+
+    <ProgressBar
+        android:layout_width="@dimen/progress_bar_diameter"
+        android:layout_height="@dimen/progress_bar_diameter"
+        android:id="@+id/progressBar"
+        android:layout_centerInParent="true"
+        android:visibility="invisible"/>
 </RelativeLayout>
