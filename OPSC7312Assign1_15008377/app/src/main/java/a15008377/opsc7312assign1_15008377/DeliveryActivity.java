@@ -10,9 +10,7 @@ package a15008377.opsc7312assign1_15008377;
 
 import android.app.DatePickerDialog;
 import android.content.Intent;
-import android.database.Cursor;
 import android.database.DataSetObserver;
-import android.media.audiofx.LoudnessEnhancer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
@@ -39,15 +37,15 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 
 public class DeliveryActivity extends AppCompatActivity {
     //Declarations
     ArrayList<DeliveryItem> lstDeliveryItems;
     String action;
+    String firebaseAction;
+    ArrayList<Stock> lstStock = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +55,7 @@ public class DeliveryActivity extends AppCompatActivity {
 
             //Methods display all required information for the Activity
             displayViews();
+            firebaseAction = "stock";
             requestStockItems();
             requestClients();
 
@@ -112,6 +111,28 @@ public class DeliveryActivity extends AppCompatActivity {
         }
     }
 
+    //Method calls the FirebaseService class and requests the Clients from the Firebase Database
+    public void requestDeliveries(String searchTerm){
+        try{
+            //Displays ProgressBar
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+            progressBar.setVisibility(View.VISIBLE);
+
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(this).getUserKey();
+            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_FETCH_DELIVERIES);
+            intent.putExtra(FirebaseService.DELIVERY_COMPLETE, 0);
+            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
+            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
+            startService(intent);
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     //Method alters Activity based on the action the user is performing
     public void displayViews(){
         try{
@@ -143,6 +164,7 @@ public class DeliveryActivity extends AppCompatActivity {
                     @Override
                     public void onChanged() {
                         super.onChanged();
+                        firebaseAction = "stock";
                         requestStockItems();
                     }
                 });
@@ -288,38 +310,8 @@ public class DeliveryActivity extends AppCompatActivity {
             ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
             progressBar.setVisibility(View.VISIBLE);
 
-            //Gets reference to Firebase
-            final ArrayList<Stock> lstStock = new ArrayList<>();
-            final FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
-            final DatabaseReference databaseReference = firebaseDatabase.getReference().child(new User(this).getUserKey()).child("stock");
-
-            //Adds Listeners for when the data is changed
-            databaseReference.addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    //Loops through all Stock and adds them to the lstStock ArrayList
-                    Iterable<DataSnapshot> lstSnapshots = dataSnapshot.getChildren();
-                    for(DataSnapshot snapshot : lstSnapshots){
-                        //Retrieves the Stock from Firebase and adds the Stock to an ArrayList of Stock objects
-                        Stock stock = snapshot.getValue(Stock.class);
-                        lstStock.add(stock);
-                    }
-                    databaseReference.removeEventListener(this);
-
-                    //Displays error message if there are no Stock items to display
-                    if(lstStock.size() > 0){
-                        saveDeliveryDetails(lstStock);
-                    }
-                    else{
-                        Toast.makeText(getApplicationContext(), "There are no currently no Stock items added", Toast.LENGTH_LONG).show();
-                    }
-                }
-
-                @Override
-                public void onCancelled(DatabaseError error) {
-                    Log.i("Data", "Failed to read data, please check your internet connection");
-                }
-            });
+            firebaseAction = "";
+            requestStockItems();
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_SHORT).show();
@@ -382,7 +374,7 @@ public class DeliveryActivity extends AppCompatActivity {
     }
 
     //Method writes the Delivery details to the Firebase database
-    public void saveDeliveryDetails(final ArrayList<Stock> lstStock){
+    public void saveDeliveryDetails(final ArrayList<Stock> lstStock, ArrayList<Delivery> lstDeliveries){
         try{
             //Assignments
             EditText txtDeliveryID = (EditText) findViewById(R.id.text_delivery_id);
@@ -410,14 +402,16 @@ public class DeliveryActivity extends AppCompatActivity {
                     if(deliveryStockID.equals(stockID)){
                         //Resets the available Stock quantity when updating the Delivery, before subtracting the new number of Stock items
                         if(action.equals("update")){
-                            /*DBAdapter dbAdapter = new DBAdapter(this);
-                            dbAdapter.open();
-                            Cursor cursor = dbAdapter.getDeliveryItem(deliveryID, deliveryStockID);
-                            if(cursor.moveToFirst()){
-                                int oldQuantity = cursor.getInt(1);
-                                availableStockQuantity += oldQuantity;
+                            for(Delivery delivery : lstDeliveries){
+                                if(delivery.getDeliveryID().equals(deliveryID)){
+                                    for(DeliveryItem deliveryItem : delivery.getLstDeliveryItems()){
+                                        if(deliveryItem.getDeliveryStockID().equals(deliveryStockID)){
+                                            int oldQuantity = deliveryItem.getDeliveryItemQuantity();
+                                            availableStockQuantity += oldQuantity;
+                                        }
+                                    }
+                                }
                             }
-                            dbAdapter.close(); */
                         }
 
                         if(numberOfItems > availableStockQuantity){
@@ -438,68 +432,9 @@ public class DeliveryActivity extends AppCompatActivity {
 
                 //Writes the Delivery details to the database if the information is valid
                 if(delivery.validateDelivery(this)){
+                    requestWriteOfDelivery(delivery, action);
 
-                    //Gets Firebase Database reference
-                    final FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
-                    final DatabaseReference databaseReference = firebaseDatabase.getReference().child(new User(this).getUserKey()).child("deliveries");
-
-                    //Adds Listeners for when the data is changed
-                    databaseReference.addValueEventListener(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            Intent intent = null;
-                            boolean valid = true;
-
-                            //Writes the Delivery details to the Firebase database
-                            if(action.equals("add")) {
-                                if (dataSnapshot.child(delivery.getDeliveryID()).exists()) {
-                                    Toast.makeText(getApplicationContext(), "The Delivery ID you have entered has already been used, please choose another one", Toast.LENGTH_LONG).show();
-                                    valid = false;
-
-                                    //Hides ProgressBar
-                                    ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
-                                    progressBar.setVisibility(View.INVISIBLE);
-                                }
-                            }
-                            databaseReference.removeEventListener(this);
-
-                            if(valid){
-                                requestUpdateOfDelivery(delivery);
-                                //updateStockLevels(lstUpdatedStockItems);
-                            }
-                        }
-
-                        @Override
-                        public void onCancelled(DatabaseError error) {
-                            Log.i("Data", "Failed to read data, please check your internet connection");
-                        }
-                    });
-
-
-                   /* if(action.equals("add") && delivery.checkDeliveryDate(this)){
-                        //Writes the Delivery details to the database when the user adds a new Delivery
-                        dbAdapter.insertDelivery(delivery);
-                        Toast.makeText(getApplicationContext(), "Delivery successfully added", Toast.LENGTH_LONG).show();
-                        dbAdapter.insertDeliveryItems(delivery.getDeliveryID(), delivery.getLstDeliveryItems());
-
-                        //Resets the Activity to allow the user to add new Deliveries
-                        intent = getIntent();
-                        finish();
-                        startActivity(intent);
-                    }
-                    else if(action.equals("update")){
-                        //Updates the Delivery, and rewrites its Delivery Items to the database when the user updates a Delivery
-                        dbAdapter.updateDelivery(delivery);
-                        dbAdapter.deleteDeliveryItems(delivery.getDeliveryID());
-                        dbAdapter.insertDeliveryItems(delivery.getDeliveryID(), delivery.getLstDeliveryItems());
-                        new Stock().rewriteFile(lstStock, this);
-                        Toast.makeText(getApplicationContext(), "Updated delivery successfully", Toast.LENGTH_LONG).show();
-
-                        //Takes the user back to the DeliveryControlActivity once the update is complete
-                        intent = new Intent(DeliveryActivity.this, DeliveryControlActivity.class);
-                        startActivity(intent);
-                    }
-                    dbAdapter.close(); */
+                    updateStockLevels(lstUpdatedStockItems);
                 }
             }
         }
@@ -520,7 +455,7 @@ public class DeliveryActivity extends AppCompatActivity {
     }
 
     //Method calls the FirebaseService class and passes in a Delivery object that must be written to the Firebase database
-    public void requestUpdateOfDelivery(Delivery delivery){
+    public void requestWriteOfDelivery(Delivery delivery, String action){
         try{
             //Displays ProgressBar
             ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
@@ -530,8 +465,9 @@ public class DeliveryActivity extends AppCompatActivity {
             String firebaseKey = new User(this).getUserKey();
             Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
             intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_UPDATE_DELIVERY);
-            intent.putExtra(FirebaseService.ACTION_UPDATE_DELIVERY, delivery);
+            intent.setAction(FirebaseService.ACTION_WRITE_DELIVERY);
+            intent.putExtra(FirebaseService.ACTION_WRITE_DELIVERY, delivery);
+            intent.putExtra(FirebaseService.ACTION_WRITE_DELIVERY_INFORMATION, action);
             intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
             startService(intent);
         }
@@ -578,11 +514,16 @@ public class DeliveryActivity extends AppCompatActivity {
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
             if(resultCode == FirebaseService.ACTION_FETCH_STOCK_RESULT_CODE){
-                ArrayList<Stock> lstStock = (ArrayList<Stock>) resultData.getSerializable(FirebaseService.ACTION_FETCH_STOCK);
+                lstStock = (ArrayList<Stock>) resultData.getSerializable(FirebaseService.ACTION_FETCH_STOCK);
 
                 //Displays error message if there are no Stock items to display
                 if(lstStock.size() > 0){
-                    displaySpinnerDeliveryItems(lstStock);
+                    if(firebaseAction.equals("stock")){
+                        displaySpinnerDeliveryItems(lstStock);
+                    }
+                    else{
+                        requestDeliveries(null);
+                    }
                 }
                 else{
                     Toast.makeText(getApplicationContext(), "There are currently no Stock items added", Toast.LENGTH_LONG).show();
@@ -599,26 +540,39 @@ public class DeliveryActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(), "There are currently no Clients added", Toast.LENGTH_LONG).show();
                 }
             }
-            else if(resultCode == FirebaseService.ACTION_UPDATE_DELIVERY_RESULT_CODE){
-                Intent intent = null;
+            else if(resultCode == FirebaseService.ACTION_WRITE_DELIVERY_RESULT_CODE){
+                boolean success = resultData.getBoolean(FirebaseService.ACTION_WRITE_DELIVERY);
 
-                if(action.equals("add")){
-                    Toast.makeText(getApplicationContext(), "Delivery successfully added", Toast.LENGTH_LONG).show();
-                    intent = getIntent();
-                    finish();
+                if(success){
+                    Intent intent;
+                    if(action.equals("add")){
+                        Toast.makeText(getApplicationContext(), "Delivery successfully added", Toast.LENGTH_LONG).show();
+                        intent = getIntent();
+                        finish();
+                    }
+                    else{
+                        Toast.makeText(getApplicationContext(), "Delivery successfully updated", Toast.LENGTH_LONG).show();
+
+                        //Takes the user back to the DeliveryControlActivity once the update is complete
+                        intent = new Intent(DeliveryActivity.this, DeliveryControlActivity.class);
+                    }
+                    startActivity(intent);
                 }
                 else{
-                    Toast.makeText(getApplicationContext(), "Delivery successfully updated", Toast.LENGTH_LONG).show();
-
-                    //Takes the user back to the ClientControlActivity once the update is complete
-                    intent = new Intent(DeliveryActivity.this, DeliveryControlActivity.class);
+                    Toast.makeText(getApplicationContext(), "The Delivery ID has already been used, please choose another Delivery ID", Toast.LENGTH_LONG).show();
                 }
 
                 //Hides ProgressBar
                 ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
                 progressBar.setVisibility(View.INVISIBLE);
+            }
+            else if(resultCode == FirebaseService.ACTION_FETCH_DELIVERIES_RESULT_CODE){
+                ArrayList<Delivery> lstDeliveries = (ArrayList<Delivery>) resultData.getSerializable(FirebaseService.ACTION_FETCH_DELIVERIES);
+                saveDeliveryDetails(lstStock, lstDeliveries);
 
-                startActivity(intent);
+                //Hides ProgressBar
+                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+                progressBar.setVisibility(View.INVISIBLE);
             }
         }
     }

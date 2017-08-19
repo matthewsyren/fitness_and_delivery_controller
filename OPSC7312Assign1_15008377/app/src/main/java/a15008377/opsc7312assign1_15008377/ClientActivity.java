@@ -171,38 +171,7 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
             if(location != null){
                 client.setClientLatitude(location.getDouble("lat"));
                 client.setClientLongitude(location.getDouble("lng"));
-
-                //Gets Firebase Database reference
-                final FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
-                final DatabaseReference databaseReference = firebaseDatabase.getReference().child(new User(this).getUserKey()).child("clients");
-
-                //Adds Listeners for when the data is changed
-                databaseReference.addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        boolean valid = true;
-
-                        //Writes the Client details to the Firebase Database
-                        if(action.equals("add")) {
-                            if (dataSnapshot.child(client.getClientID()).exists()) {
-                                Toast.makeText(getApplicationContext(), "The Client ID you have entered has already been used, please choose another one", Toast.LENGTH_LONG).show();
-                                valid = false;
-                                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
-                                progressBar.setVisibility(View.INVISIBLE);
-                            }
-                        }
-
-                        databaseReference.removeEventListener(this);
-                        if(valid) {
-                            requestUpdateOfClient(client);
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError error) {
-                        Log.i("Data", "Failed to read data, please check your internet connection");
-                    }
-                });
+                requestWriteOfClient(client, action);
             }
         }
         catch(Exception exc){
@@ -212,7 +181,7 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
     }
 
     //Method calls the FirebaseService class and passes in a Client object that must be written to the Firebase database
-    public void requestUpdateOfClient(Client client){
+    public void requestWriteOfClient(Client client, String action){
         try{
             //Displays ProgressBar
             ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
@@ -222,8 +191,9 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
             String firebaseKey = new User(this).getUserKey();
             Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
             intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_UPDATE_CLIENT);
-            intent.putExtra(FirebaseService.ACTION_UPDATE_CLIENT, client);
+            intent.setAction(FirebaseService.ACTION_WRITE_CLIENT);
+            intent.putExtra(FirebaseService.ACTION_WRITE_CLIENT, client);
+            intent.putExtra(FirebaseService.ACTION_WRITE_CLIENT_INFORMATION, action);
             intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
             startService(intent);
         }
@@ -259,10 +229,10 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
 
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
+            boolean success = resultData.getBoolean(FirebaseService.ACTION_WRITE_CLIENT);
 
-            if(resultCode == FirebaseService.ACTION_UPDATE_CLIENT_RESULT_CODE){
-                Intent intent = null;
-
+            if(success){
+                Intent intent;
                 if(action.equals("add")){
                     Toast.makeText(getApplicationContext(), "Client successfully added", Toast.LENGTH_LONG).show();
                     intent = getIntent();
@@ -274,13 +244,15 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
                     //Takes the user back to the ClientControlActivity once the update is complete
                     intent = new Intent(ClientActivity.this, ClientControlActivity.class);
                 }
-
-                //Hides ProgressBar
-                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-                progressBar.setVisibility(View.INVISIBLE);
-
                 startActivity(intent);
             }
+            else{
+                Toast.makeText(getApplicationContext(), "The Client ID has already been used, please choose another Client ID", Toast.LENGTH_LONG).show();
+            }
+
+            //Hides ProgressBar
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+            progressBar.setVisibility(View.INVISIBLE);
         }
     }
 }

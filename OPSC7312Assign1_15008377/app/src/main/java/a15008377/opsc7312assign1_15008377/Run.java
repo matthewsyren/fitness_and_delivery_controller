@@ -1,10 +1,12 @@
 package a15008377.opsc7312assign1_15008377;
 
+import java.io.Serializable;
+
 /**
  * Created by Matthew Syrén on 2017/08/12.
  */
 
-public class Run {
+public class Run implements Serializable{
     private String startTime;
     private String endTime;
     private double distanceCovered;

@@ -26,6 +26,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -37,6 +38,7 @@ import com.google.firebase.storage.UploadTask;
 
 import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 
 public class Question1B extends FragmentActivity implements OnMapReadyCallback {
@@ -49,6 +51,8 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
     private Location previousLocation;
     private double distanceTravelled = 0;
     private StorageReference mStorageRef;
+    private LocationManager locationManager;
+    LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,7 +108,7 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
             startTime = System.currentTimeMillis();
 
             //Creates LocationManager object and registers a LocationChangedListener
-            final LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+            locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
             Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
             zoomToLocation(latLng);
@@ -119,6 +123,7 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
                 @Override
                 public void onLocationChanged(Location location) {
                     LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                    builder.include(latLng);
                     zoomToLocation(latLng);
                     drawPolyline(latLng);
                     if(previousLocation != null){
@@ -172,7 +177,7 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
     //Method zooms the camera to the specified LatLng marker
     public void zoomToLocation(LatLng location){
         try{
-            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(location, 15);
+            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(location, 250);
             mMap.animateCamera(cameraUpdate);
         }
         catch(Exception exc){
@@ -195,8 +200,14 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
     //Method ends the location tracking of the user, and asks them if they would like to save their route details
     public void endLocationTracking(){
         try{
+            locationManager.removeUpdates(locationListener);
             locationListener = null;
             Toast.makeText(getApplicationContext(), "Route tracking stopped", Toast.LENGTH_LONG).show();
+
+            //Zooms out to display the entire route taken by the user
+            LatLngBounds bounds = builder.build();
+            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, 250);
+            mMap.animateCamera(cameraUpdate);
 
             //Changes the icon of the FloatingActionButton
             FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.floating_action_button_track_route);

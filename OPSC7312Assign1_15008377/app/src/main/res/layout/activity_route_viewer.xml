@@ -5,11 +5,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="a15008377.opsc7312assign1_15008377.RouteHistoryActivity">
-    <ListView
-        android:id="@+id/list_view_runs"
+    tools:context="a15008377.opsc7312assign1_15008377.RouteViewerActivity">
+    <ImageView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:id="@+id/image_run_route"/>
     <ProgressBar
         android:layout_width="@dimen/progress_bar_diameter"
         android:layout_height="@dimen/progress_bar_diameter"

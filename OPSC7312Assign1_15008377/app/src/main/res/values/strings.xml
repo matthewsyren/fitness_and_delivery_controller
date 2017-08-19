@@ -1,6 +1,10 @@
 <resources>
-    <string name="app_name">" OPSC7312Assign1_15008377"</string>
+    <string name="app_name">Fitness and Delivery Controller</string>
     <string name="title_activity_maps">Map</string>
+    <string name="question_one_a">Question 1A</string>
+    <string name="question_one_b">Question 1B</string>
+    <string name="question_two">Question 2</string>
+    <string name="sign_out">Sign Out</string>
 
     <string name="prompt_email">Enter your email address</string>
     <string name="prompt_password">Enter a password</string>

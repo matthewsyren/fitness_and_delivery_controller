@@ -12,8 +12,12 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.Resources;
+import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.v4.os.ResultReceiver;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,8 +25,16 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -31,6 +43,8 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
     //Declarations
     Context context;
     private ArrayList<Delivery> lstDeliveries;
+    String action;
+    Delivery deliveryToBeDeleted;
 
     public DeliveryReportListViewAdapter(Context context, ArrayList<Delivery> lstDeliveries) {
         super(context, R.layout.list_view_row_delivery_report,lstDeliveries);
@@ -81,7 +95,7 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
             itemText += "Item ID: " + lstDeliveryItems.get(i).getDeliveryStockID() + "\nQuantity: " + lstDeliveryItems.get(i).getDeliveryItemQuantity();
         }
         txtDeliveryItems.setText(itemText);
-        /*
+
         //Displays the buttons to mark a delivery as complete or delete a Delivery if the Delivery is incomplete, and hides those buttons if the Delivery is complete
         if(lstDeliveries.get(position).getDeliveryComplete() == 0){
             //Sets OnClickListener for the button_delete_delivery Button
@@ -98,7 +112,11 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
                             switch(button){
                                 //Checks if the username is valid (length > 0 and every character is an alphabetic character)
                                 case AlertDialog.BUTTON_POSITIVE:
-                                    DBAdapter dbAdapter = new DBAdapter(context);
+                                    action = "delete";
+                                    requestWriteOfDelivery(lstDeliveries.get(position), action);
+                                    deliveryToBeDeleted = lstDeliveries.get(position);
+                                    requestStockItems(null);
+                                    /*DBAdapter dbAdapter = new DBAdapter(context);
                                     dbAdapter.open();
 
                                     String deliveryID = lstDeliveries.get(position).getDeliveryID();
@@ -111,7 +129,7 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
                                         Toast.makeText(context, "Delivery successfully deleted", Toast.LENGTH_LONG).show();
                                         notifyDataSetChanged();
                                     }
-                                    dbAdapter.close();
+                                    dbAdapter.close(); */
                                     break;
                                 case AlertDialog.BUTTON_NEGATIVE:
                                     Toast.makeText(context, "Deletion cancelled", Toast.LENGTH_LONG).show();
@@ -133,14 +151,11 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
                 @Override
                 public void onClick(View v) {
                     try{
-                        DBAdapter dbAdapter = new DBAdapter(context);
-                        dbAdapter.open();
+                        action = "update";
                         Delivery delivery = lstDeliveries.get(position);
                         delivery.setDeliveryComplete(1);
-                        dbAdapter.updateDelivery(delivery);
+                        requestWriteOfDelivery(delivery, action);
                         lstDeliveries.remove(position);
-                        Toast.makeText(context, "Delivery marked as complete", Toast.LENGTH_SHORT).show();
-                        dbAdapter.close();
                         notifyDataSetChanged();
                     }
                     catch(Exception exc){
@@ -154,15 +169,15 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
             btnDeleteDelivery.setVisibility(View.GONE);
             btnMarkDeliveryAsComplete.setVisibility(View.GONE);
         }
-        */
+
         return convertView;
     }
 
     //Method adds the items that were in the deleted Delivery back to the Stock.txt text file
-    private void addItemsBackToStock(Delivery delivery){
+    private void addItemsBackToStock(ArrayList<Stock> lstStock){
         try{
-            ArrayList<Stock> lstStock = Stock.readStockItems(context);
-            ArrayList<DeliveryItem> lstDeliveryItems = delivery.getLstDeliveryItems();
+            ArrayList<DeliveryItem> lstDeliveryItems = deliveryToBeDeleted.getLstDeliveryItems();
+            ArrayList<Stock> lstStockToBeUpdated = new ArrayList<>();
 
             //Loops through all DeliveryItems and adds them back to Stock
             for(int i = 0; i < lstDeliveryItems.size(); i++){
@@ -173,15 +188,107 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
                     if(deliveryItemID.equals(stockID)){
                         int stockQuantity = lstStock.get(j).getStockQuantity();
                         lstStock.get(j).setStockQuantity(stockQuantity + lstDeliveryItems.get(i).getDeliveryItemQuantity());
+                        lstStockToBeUpdated.add(lstStock.get(j));
                     }
                 }
             }
 
-            //Writes the updated Stock quantities to the Stock.txt text file
-            new Stock().rewriteFile(lstStock, context);
+            //Writes the updated Stock quantities to the Firebase Database
+            updateStockLevels(lstStockToBeUpdated);
         }
-        catch(IOException ioe){
-            Toast.makeText(context, ioe.getMessage(), Toast.LENGTH_LONG).show();
+        catch(Exception exc){
+            Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Method calls the FirebaseService class and requests the Stock items from the Firebase Database
+    public void requestStockItems(String searchTerm){
+        try{
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(context).getUserKey();
+            Intent intent = new Intent(context, FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_FETCH_STOCK);
+            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
+            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
+            context.startService(intent);
+        }
+        catch(Exception exc){
+            Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Method calls the FirebaseService class and passes in a Delivery object that must be written to the Firebase database
+    public void requestWriteOfDelivery(Delivery delivery, String action){
+        try{
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(context).getUserKey();
+            Intent intent = new Intent(context, FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_WRITE_DELIVERY);
+            intent.putExtra(FirebaseService.ACTION_WRITE_DELIVERY, delivery);
+            intent.putExtra(FirebaseService.ACTION_WRITE_DELIVERY_INFORMATION, action);
+            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
+            context.startService(intent);
+        }
+        catch(Exception exc){
+            Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Method receives an ArrayList of Stock items with an updated quantity, and updates the available quantity of stock in the Firebase Database
+    public void updateStockLevels(final ArrayList<Stock> lstStock){
+        try{
+            //Gets Firebase Database reference
+            final FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
+            final DatabaseReference databaseReference = firebaseDatabase.getReference().child(new User(context).getUserKey()).child("stock");
+
+            //Adds Listeners for when the data is changed
+            databaseReference.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    for(int i = 0; i < lstStock.size(); i++){
+                        databaseReference.child(lstStock.get(i).getStockID()).setValue(lstStock.get(i));
+                    }
+                    databaseReference.removeEventListener(this);
+                    Toast.makeText(context, "Stock levels updated", Toast.LENGTH_LONG).show();
+                }
+
+                @Override
+                public void onCancelled(DatabaseError error) {
+                    Log.i("Data", "Failed to read data, please check your internet connection");
+                }
+            });
+        }
+        catch(Exception exc){
+            Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Creates a ResultReceiver to retrieve information from the FirebaseService
+    private class DataReceiver extends ResultReceiver {
+        private DataReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData){
+            if(resultCode == FirebaseService.ACTION_WRITE_DELIVERY_RESULT_CODE){
+                boolean success = resultData.getBoolean(FirebaseService.ACTION_WRITE_DELIVERY);
+
+                if(success){
+                    if(action.equals("update")){
+                        Toast.makeText(context, "Delivery marked as complete", Toast.LENGTH_LONG).show();
+                    }
+                    else{
+                        Toast.makeText(context, "Delivery deleted successfully", Toast.LENGTH_LONG).show();
+                    }
+                }
+            }
+            else if(resultCode == FirebaseService.ACTION_FETCH_STOCK_RESULT_CODE){
+                ArrayList<Stock> lstStock = (ArrayList<Stock>) resultData.getSerializable(FirebaseService.ACTION_FETCH_STOCK);
+                addItemsBackToStock(lstStock);
+            }
         }
     }
 }

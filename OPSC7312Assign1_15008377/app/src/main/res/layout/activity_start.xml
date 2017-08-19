@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="a15008377.opsc7312assign1_15008377.StartActivity">
+    <RelativeLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_weight="1">
+    <Button
+        android:id="@+id/button_question_one_a"
+        android:layout_width="368dp"
+        android:layout_height="wrap_content"
+        android:text="@string/question_one_a"
+        android:background="@drawable/button"
+        android:onClick="questionOneAOnClick"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1">
+        <Button
+            android:id="@+id/button_question_one_b"
+            android:layout_width="368dp"
+            android:layout_height="wrap_content"
+            android:text="@string/question_one_b"
+            android:background="@drawable/button"
+            android:onClick="questionOneBOnClick"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1">
+        <Button
+            android:id="@+id/button_question_two"
+            android:layout_width="368dp"
+            android:layout_height="wrap_content"
+            android:text="@string/question_two"
+            android:background="@drawable/button"
+            android:onClick="questionTwoOnClick"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1">
+        <Button
+            android:id="@+id/button_sign_out"
+            android:layout_width="368dp"
+            android:layout_height="wrap_content"
+            android:text="@string/sign_out"
+            android:background="@drawable/button"
+            android:onClick="signOutOnClick"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"/>
+    </RelativeLayout>
+</LinearLayout>

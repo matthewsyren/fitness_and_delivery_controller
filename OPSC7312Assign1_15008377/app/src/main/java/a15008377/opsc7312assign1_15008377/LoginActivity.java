@@ -33,7 +33,7 @@ public class LoginActivity extends AppCompatActivity {
             //Takes the user to the HomeActivity if they have already signed in
             User user = new User(this);
             if(user.getUserEmailAddress() != null){
-                Intent intent = new Intent(LoginActivity.this, Question1B.class);
+                Intent intent = new Intent(LoginActivity.this, StartActivity.class);
                 startActivity(intent);
             }
         }
