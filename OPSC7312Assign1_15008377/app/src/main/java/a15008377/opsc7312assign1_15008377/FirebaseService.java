@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.os.ResultReceiver;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -17,10 +16,10 @@ import java.util.ArrayList;
 
 public class FirebaseService extends IntentService {
     //Declarations
-    public static final String RECEIVER = "a15008377.opsc7312assign1_15008377.action.RECEIVER";
-    public static final String FIREBASE_KEY = "a15008377.opsc7312assign1_15008377.action.USER_FIREBASE_KEY";
-    public static final String DELIVERY_COMPLETE = "a15008377.opsc7312assign1_15008377.action.DELIVERY_COMPLETE";
-    public static final String SEARCH_TERM = "a15008377.opsc7312assign1_15008377.action.SEARCH_TERM";
+    public static final String RECEIVER = "a15008377.opsc7312assign1_15008377.RECEIVER";
+    public static final String FIREBASE_KEY = "a15008377.opsc7312assign1_15008377.USER_FIREBASE_KEY";
+    public static final String DELIVERY_COMPLETE = "a15008377.opsc7312assign1_15008377.DELIVERY_COMPLETE";
+    public static final String SEARCH_TERM = "a15008377.opsc7312assign1_15008377.SEARCH_TERM";
 
     //Action Declarations
     public static final String ACTION_FETCH_STOCK =  "a15008377.opsc7312assign1_15008377.action.FETCH_STOCK";

@@ -260,6 +260,8 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
             String startDate = simpleDateFormat.format(calendar.getTime());
             calendar.setTimeInMillis(endTime);
             String endDate = simpleDateFormat.format(calendar.getTime());
+            averageSpeed = Math.round(averageSpeed);
+            distanceTravelled = Math.round(distanceTravelled);
 
             //Gets a reference to the Firebase Database (with a randomised key for the Run), creates a Run object and writes the data to the Firebase Database and the image to Firebase Storage
             FirebaseDatabase database = FirebaseDatabase.getInstance();

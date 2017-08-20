@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <android.support.v7.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/app_bar_margin"
+        android:layout_marginBottom="@dimen/app_bar_margin"
+        android:layout_marginLeft="@dimen/button_padding"
+        android:layout_marginRight="@dimen/button_padding"
+        android:background="@color/white"
+        android:elevation="@dimen/card_view_content_padding"
+        app:contentPadding="@dimen/card_view_content_padding"
+        app:cardCornerRadius="@dimen/card_view_corner_margin">
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <!-- Ensures that image is in line with text -->
+            <LinearLayout
+                android:id="@+id/thumbnail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="3dip"
+                android:layout_alignParentLeft="true"
+                android:layout_marginRight="5dip"
+                android:layout_centerInParent="true">
+
+                <ImageView
+                    android:id="@+id/image_run"
+                    android:layout_width="75dip"
+                    android:layout_height="75dip" />
+            </LinearLayout>
+
+            <!-- Textual information that relates to image -->
+            <TextView
+                android:id="@+id/text_run_start_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignTop="@+id/thumbnail"
+                android:layout_toRightOf="@+id/thumbnail"
+                android:textColor="#040404"
+                android:typeface="sans"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/text_run_end_date"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/text_run_start_date"
+                android:textColor="#343434"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="1dip"
+                android:layout_toRightOf="@+id/thumbnail" />
+
+            <TextView
+                android:id="@+id/text_run_distance_covered"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/text_run_end_date"
+                android:textColor="#343434"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="1dip"
+                android:layout_toRightOf="@+id/thumbnail" />
+
+            <TextView
+                android:id="@+id/text_run_average_speed"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/text_run_distance_covered"
+                android:textColor="#343434"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="1dip"
+                android:layout_toRightOf="@+id/thumbnail" />
+        </RelativeLayout>
+
+    </android.support.v7.widget.CardView>
+</RelativeLayout>

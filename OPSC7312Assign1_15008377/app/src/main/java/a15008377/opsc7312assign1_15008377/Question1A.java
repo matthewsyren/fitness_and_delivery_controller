@@ -7,13 +7,14 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
+
 
 public class Question1A extends AppCompatActivity {
 
@@ -76,7 +77,8 @@ public class Question1A extends AppCompatActivity {
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
             String result = resultData.getString(LocationService.RESULT_KEY);
-            Toast.makeText(getApplicationContext(), "Address is " + result, Toast.LENGTH_LONG).show();
+            TextView textView = (TextView) findViewById(R.id.text_address);
+            textView.setText("Address: " + result);
         }
     }
 }

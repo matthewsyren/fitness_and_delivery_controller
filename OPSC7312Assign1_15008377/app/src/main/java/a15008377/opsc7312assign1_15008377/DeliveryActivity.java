@@ -37,15 +37,17 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Calendar;
 
 public class DeliveryActivity extends AppCompatActivity {
     //Declarations
-    ArrayList<DeliveryItem> lstDeliveryItems;
-    String action;
-    String firebaseAction;
-    ArrayList<Stock> lstStock = new ArrayList<>();
+    private ArrayList<DeliveryItem> lstDeliveryItems;
+    private String action;
+    private String firebaseAction;
+    private ArrayList<Stock> lstStock = new ArrayList<>();
+    private ArrayList<DeliveryItem> lstOriginalDeliveryItems = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -150,6 +152,9 @@ public class DeliveryActivity extends AppCompatActivity {
                 Delivery delivery = (Delivery) bundle.getSerializable("deliveryObject");
                 displayDelivery(delivery);
                 displayDeliveryItems(delivery.getLstDeliveryItems());
+                for(DeliveryItem deliveryItem : delivery.getLstDeliveryItems()){
+                    lstOriginalDeliveryItems.add(deliveryItem);
+                }
             }
             else if(action.equals("add")){
                 button.setText(R.string.button_add_delivery);
@@ -390,6 +395,20 @@ public class DeliveryActivity extends AppCompatActivity {
             ArrayList<DeliveryItem> lstDeliveryItems = getDeliveryItems();
             final ArrayList<Stock> lstUpdatedStockItems = new ArrayList<>();
 
+            for(DeliveryItem originalDeliveryItem : lstOriginalDeliveryItems){
+                boolean found = false;
+                for(DeliveryItem deliveryItem : lstDeliveryItems){
+                    if(originalDeliveryItem.getDeliveryStockID().equals(deliveryItem.getDeliveryStockID())){
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found){
+                    originalDeliveryItem.setDeliveryItemQuantity(0);
+                    lstDeliveryItems.add(originalDeliveryItem);
+                }
+            }
+
             //Loops through available Stock to ensure that there is enough Stock available to cater for the Delivery
             for(int i = 0; i < lstDeliveryItems.size(); i++){
                 String deliveryStockID = lstDeliveryItems.get(i).getDeliveryStockID();
@@ -419,6 +438,9 @@ public class DeliveryActivity extends AppCompatActivity {
                             enoughStock = false;
                         }
                         else{
+                            if(numberOfItems < 0){
+                                Toast.makeText(getApplicationContext(), "Avail: " + availableStockQuantity + "    Quan: " + numberOfItems, Toast.LENGTH_LONG).show();
+                            }
                             lstStock.get(j).setStockQuantity(availableStockQuantity - numberOfItems);
                             lstUpdatedStockItems.add(lstStock.get(j));
                         }

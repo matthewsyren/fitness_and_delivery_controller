@@ -6,23 +6,16 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
@@ -41,7 +34,7 @@ public class RunListViewAdapter extends ArrayAdapter {
 
     //Constructor
     public RunListViewAdapter(Context context, ArrayList<Run> runs) {
-        super(context, R.layout.list_row_runs,runs);
+        super(context, R.layout.list_view_row_runs,runs);
         this.context = context;
         this.runs = runs;
         storageReference = FirebaseStorage.getInstance().getReference();
@@ -53,7 +46,7 @@ public class RunListViewAdapter extends ArrayAdapter {
     {
         //Inflates the list_row view for the ListView
         LayoutInflater inflater = ((Activity)context).getLayoutInflater();
-        convertView = inflater.inflate(R.layout.list_row_runs, parent, false);
+        convertView = inflater.inflate(R.layout.list_view_row_runs, parent, false);
 
         //Component assignments
         final ImageView image = (ImageView) convertView.findViewById(R.id.image_run);

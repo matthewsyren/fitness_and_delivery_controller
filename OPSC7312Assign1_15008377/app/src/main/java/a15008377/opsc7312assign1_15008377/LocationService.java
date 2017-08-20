@@ -22,9 +22,9 @@ import java.util.Locale;
 public class LocationService extends IntentService {
     //Result codes
     public static final int LOCATION_ADDRESS_KEY = 2;
-    public static final String LOCATION_DATA_KEY = "LOCATION";
-    public static final String RESULT_KEY = "ResultKey";
-    public static final String RECEIVER = "Receiver";
+    public static final String LOCATION_DATA_KEY = "a15008377.opsc7312assign1_15008377.LOCATION";
+    public static final String RESULT_KEY = "a15008377.opsc7312assign1_15008377.RESULT_KEY";
+    public static final String RECEIVER = "a15008377.opsc7312assign1_15008377.RECEIVER";
     public static final int SUCCESS = 1;
     private ResultReceiver resultReceiver;
 
@@ -39,12 +39,13 @@ public class LocationService extends IntentService {
             Location location = intent.getParcelableExtra(LOCATION_DATA_KEY);
             Geocoder geocoder = new Geocoder(getApplicationContext(), Locale.ENGLISH);
             Address address = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1).get(0);
+
             String addressString = "";
-            for(int i = 0; i < address.getMaxAddressLineIndex() - 1; i++) {
-                addressString += address.getAddressLine(i) + ", ";
+
+            for(int i = 0; i <= address.getMaxAddressLineIndex() ; i++) {
+                addressString += address.getAddressLine(i);
             }
 
-            addressString += address.getAddressLine(address.getMaxAddressLineIndex() - 1);
             returnResult(LOCATION_ADDRESS_KEY, SUCCESS, addressString);
         }
         catch(Exception exc){
