@@ -8,11 +8,22 @@
 
 package a15008377.opsc7312assign1_15008377;
 
+import android.*;
+import android.Manifest;
 import android.app.DatePickerDialog;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.database.DataSetObserver;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.CalendarContract;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -40,6 +51,7 @@ import com.google.firebase.database.ValueEventListener;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 public class DeliveryActivity extends AppCompatActivity {
     //Declarations
@@ -48,6 +60,7 @@ public class DeliveryActivity extends AppCompatActivity {
     private String firebaseAction;
     private ArrayList<Stock> lstStock = new ArrayList<>();
     private ArrayList<DeliveryItem> lstOriginalDeliveryItems = new ArrayList<>();
+    private Delivery newDelivery;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +73,11 @@ public class DeliveryActivity extends AppCompatActivity {
             firebaseAction = "stock";
             requestStockItems();
             requestClients();
+
+            if(ContextCompat.checkSelfPermission(DeliveryActivity.this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(DeliveryActivity.this, new String[]{Manifest.permission.WRITE_CALENDAR}, PackageManager.PERMISSION_GRANTED);
+            }
+
 
             //Makes ListView scrollable in a ScrollView (see https://stackoverflow.com/questions/18367522/android-list-view-inside-a-scroll-view)
             ListView listView = (ListView) findViewById(R.id.list_view_delivery_items);
@@ -455,7 +473,7 @@ public class DeliveryActivity extends AppCompatActivity {
                 //Writes the Delivery details to the database if the information is valid
                 if(delivery.validateDelivery(this)){
                     requestWriteOfDelivery(delivery, action);
-
+                    newDelivery = delivery;
                     updateStockLevels(lstUpdatedStockItems);
                 }
             }
@@ -527,6 +545,76 @@ public class DeliveryActivity extends AppCompatActivity {
         }
     }
 
+    //Method writes the Delivery details to the calendar
+    public void addDeliveryToCalendar() throws SecurityException{
+        try{
+            Calendar deliveryDate = Calendar.getInstance();
+            String dateOfDelivery = newDelivery.getDeliveryDate();
+            String[] parsedDeliveryDate = dateOfDelivery.split("/");
+
+            deliveryDate.set(Integer.parseInt(parsedDeliveryDate[2]), Integer.parseInt(parsedDeliveryDate[1]) - 1, Integer.parseInt(parsedDeliveryDate[0]), 8, 0);
+            long dateMilliseconds = deliveryDate.getTimeInMillis();
+
+            ContentResolver cr = getContentResolver();
+            ContentValues values = new ContentValues();
+            values.put(CalendarContract.Events.DTSTART, dateMilliseconds);
+            values.put(CalendarContract.Events.DTEND, dateMilliseconds);
+            values.put(CalendarContract.Events.TITLE, "Delivery " + newDelivery.getDeliveryID());
+            values.put(CalendarContract.Events.DESCRIPTION, "Client: " + newDelivery.getDeliveryClientID());
+            values.put(CalendarContract.Events.CALENDAR_ID, 1);
+            values.put(CalendarContract.Events.ALL_DAY, true);
+            values.put(CalendarContract.Events.HAS_ALARM, true);
+
+            //Get current timezone
+            values.put(CalendarContract.Events.EVENT_TIMEZONE, TimeZone.getDefault().getID());
+            Uri uri = cr.insert(CalendarContract.Events.CONTENT_URI, values);
+            long eventID = Long.parseLong(uri.getLastPathSegment());
+            Toast.makeText(getApplicationContext(), "Event ID: " + eventID, Toast.LENGTH_LONG ).show();
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //https://stackoverflow.com/questions/22942473/how-to-update-and-remove-calendar-event-in-android
+    //https://stackoverflow.com/questions/13232717/how-to-get-all-the-events-from-calendar
+    public void updateDeliveryInCalendar() throws SecurityException{
+        try{
+            ContentResolver contentResolver = getContentResolver();
+            final Cursor cursor = contentResolver.query(CalendarContract.Calendars.CONTENT_URI, (new String[]{CalendarContract.Calendars._ID, CalendarContract.Calendars.CALENDAR_DISPLAY_NAME}), null, null, null);
+            while (cursor.moveToNext()) {
+                final String _id = cursor.getString(0);
+                final String displayName = cursor.getString(1);
+
+                Cursor eventCursor = getApplicationContext().getContentResolver().query(Uri.parse("content://com.android.calendar/events"), new String[] { "_id", "title"}, CalendarContract.Instances.CALENDAR_ID + " = ?", new String[] {"1"}, null);
+
+                while (eventCursor.moveToNext()) {
+                    final long id = eventCursor.getLong(0);
+                    final String title = eventCursor.getString(1);
+                    if(title.equals("Delivery " + newDelivery.getDeliveryID())){
+                        ContentValues values = new ContentValues();
+                        Calendar deliveryDate = Calendar.getInstance();
+                        String dateOfDelivery = newDelivery.getDeliveryDate();
+                        String[] parsedDeliveryDate = dateOfDelivery.split("/");
+
+                        deliveryDate.set(Integer.parseInt(parsedDeliveryDate[2]), Integer.parseInt(parsedDeliveryDate[1]) - 1, Integer.parseInt(parsedDeliveryDate[0]), 8, 0);
+                        long dateMilliseconds = deliveryDate.getTimeInMillis();
+                        values.put(CalendarContract.Events.DTSTART, dateMilliseconds);
+                        values.put(CalendarContract.Events.DTEND, dateMilliseconds);
+
+                        Uri eventsUri = Uri.parse("content://com.android.calendar/events");
+                        Uri eventUri = ContentUris.withAppendedId(eventsUri, id);
+                        int i = getContentResolver().update(eventUri, values, null, null);
+                    }
+                }
+            }
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+
+    }
+
     //Creates a ResultReceiver to retrieve information from the FirebaseService
     private class DataReceiver extends ResultReceiver {
         private DataReceiver(Handler handler) {
@@ -568,11 +656,13 @@ public class DeliveryActivity extends AppCompatActivity {
                 if(success){
                     Intent intent;
                     if(action.equals("add")){
+                        addDeliveryToCalendar();
                         Toast.makeText(getApplicationContext(), "Delivery successfully added", Toast.LENGTH_LONG).show();
                         intent = getIntent();
                         finish();
                     }
                     else{
+                        updateDeliveryInCalendar();
                         Toast.makeText(getApplicationContext(), "Delivery successfully updated", Toast.LENGTH_LONG).show();
 
                         //Takes the user back to the DeliveryControlActivity once the update is complete

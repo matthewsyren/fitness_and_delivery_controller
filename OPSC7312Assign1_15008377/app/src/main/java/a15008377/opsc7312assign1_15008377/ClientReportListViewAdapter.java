@@ -45,7 +45,7 @@ public class ClientReportListViewAdapter extends ArrayAdapter{
         //View declarations
         TextView txtClientID;
         TextView txtClientName;
-        TextView txtClientEmail;
+        TextView txtClientPhoneNumber;
         TextView txtClientAddress;
         ImageButton btnDeleteClient;
 
@@ -56,7 +56,7 @@ public class ClientReportListViewAdapter extends ArrayAdapter{
         //Component assignments
         txtClientID = (TextView) convertView.findViewById(R.id.text_client_id);
         txtClientName = (TextView) convertView.findViewById(R.id.text_client_name);
-        txtClientEmail = (TextView) convertView.findViewById(R.id.text_client_email);
+        txtClientPhoneNumber = (TextView) convertView.findViewById(R.id.text_client_phone_number);
         txtClientAddress = (TextView) convertView.findViewById(R.id.text_client_address);
         btnDeleteClient = (ImageButton) convertView.findViewById(R.id.button_delete_client);
 
@@ -64,7 +64,7 @@ public class ClientReportListViewAdapter extends ArrayAdapter{
         Resources resources = context.getResources();
         txtClientID.setText(resources.getString(R.string.client_id,  lstClients.get(position).getClientID()));
         txtClientName.setText(resources.getString(R.string.client_name,  lstClients.get(position).getClientName()));
-        txtClientEmail.setText(resources.getString(R.string.client_email,  lstClients.get(position).getClientEmail()));
+        txtClientPhoneNumber.setText(resources.getString(R.string.client_phone_number,  lstClients.get(position).getClientPhoneNumber()));
         txtClientAddress.setText(resources.getString(R.string.client_address,  lstClients.get(position).getClientAddress()));
 
         //Sets OnClickListener for the button_delete_client Button

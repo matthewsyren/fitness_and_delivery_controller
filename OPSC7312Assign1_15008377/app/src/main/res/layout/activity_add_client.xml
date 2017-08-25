@@ -52,25 +52,25 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/label_client_email"
+                android:id="@+id/label_client_phone_number"
                 android:layout_below="@+id/text_client_name"
-                android:text="@string/label_client_email"
+                android:text="@string/label_client_phone_number"
                 style="@style/TextStyle"/>
 
             <EditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/label_client_email"
-                android:id="@+id/text_client_email"
+                android:layout_below="@+id/label_client_phone_number"
+                android:id="@+id/text_client_phone_number"
                 style="@style/TextStyle"
-                android:inputType="textWebEmailAddress"
+                android:inputType="phone"
                 android:layout_marginBottom="@dimen/activity_vertical_margin"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/label_client_address"
-                android:layout_below="@+id/text_client_email"
+                android:layout_below="@+id/text_client_phone_number"
                 android:text="@string/label_client_address"
                 style="@style/TextStyle"/>
 

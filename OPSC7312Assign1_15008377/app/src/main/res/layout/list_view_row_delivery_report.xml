@@ -15,11 +15,15 @@
         android:elevation="@dimen/card_view_content_padding"
         app:contentPadding="@dimen/card_view_content_padding"
         app:cardCornerRadius="@dimen/card_view_corner_margin">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:descendantFocusability="blocksDescendants">
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="vertical"
-                android:descendantFocusability="blocksDescendants">
+                android:layout_weight="0.5">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -50,23 +54,43 @@
                     android:layout_height="wrap_content"
                     android:id="@+id/text_delivery_items"
                     style="@style/ListViewTextStyle"/>
-
-                <ImageButton
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/ic_delete"
-                    android:id="@+id/button_delete_delivery"
-                    android:focusable="false"
-                    style="@style/SecondaryButtonStyle"
-                    android:paddingTop="@dimen/button_margin"
-                    android:paddingBottom="@dimen/button_margin"/>
-
-                <Button
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/button_mark_delivery_as_complete"
-                    style="@style/SecondaryButtonStyle"
-                    android:text="@string/button_mark_delivery_as_complete" />
             </LinearLayout>
+            <LinearLayout
+                android:orientation="horizontal"
+                android:id="@+id/linear_layout_delivery_options"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1">
+                    <ImageButton
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:src="@drawable/ic_delete"
+                        android:id="@+id/button_delete_delivery"
+                        android:focusable="false"
+                        android:background="@drawable/button_rounded"
+                        android:tint="@color/colorPrimary"
+                        android:layout_centerInParent="true"/>
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1">
+                <ImageButton
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:id="@+id/button_mark_delivery_as_complete"
+                        android:background="@drawable/button_rounded"
+                        android:tint="@color/colorPrimary"
+                        android:src="@drawable/ic_done_black_24dp"
+                        android:layout_centerVertical="true"
+                        android:layout_centerHorizontal="true"/>
+                </RelativeLayout>
+            </LinearLayout>
+        </LinearLayout>
         </android.support.v7.widget.CardView>
 </LinearLayout>

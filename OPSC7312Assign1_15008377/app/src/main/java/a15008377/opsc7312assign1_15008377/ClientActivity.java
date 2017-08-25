@@ -111,13 +111,13 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
             //View assignments
             EditText txtClientID = (EditText) findViewById(R.id.text_client_id);
             EditText txtClientName = (EditText) findViewById(R.id.text_client_name);
-            EditText txtClientEmail = (EditText) findViewById(R.id.text_client_email);
+            EditText txtClientPhoneNumber = (EditText) findViewById(R.id.text_client_phone_number);
             EditText txtClientAddress = (EditText) findViewById(R.id.text_client_address);
 
             //Displays appropriate data in Views
             txtClientID.setText(client.getClientID());
             txtClientName.setText(client.getClientName());
-            txtClientEmail.setText(client.getClientEmail());
+            txtClientPhoneNumber.setText(client.getClientPhoneNumber());
             txtClientAddress.setText(client.getClientAddress());
         }
         catch(Exception exc){
@@ -131,19 +131,19 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
             //View assignments
             EditText txtClientID = (EditText) findViewById(R.id.text_client_id);
             EditText txtClientName = (EditText) findViewById(R.id.text_client_name);
-            EditText txtClientEmail = (EditText) findViewById(R.id.text_client_email);
+            EditText txtClientPhoneNumber = (EditText) findViewById(R.id.text_client_phone_number);
             EditText txtClientAddress = (EditText) findViewById(R.id.text_client_address);
 
             //Fetches data from Views
             String clientID = txtClientID.getText().toString();
             String clientName = txtClientName.getText().toString();
-            String clientEmail = txtClientEmail.getText().toString();
+            String clientPhoneNumber = txtClientPhoneNumber.getText().toString();
             String clientAddress = txtClientAddress.getText().toString();
-            client = new Client(clientID, clientName, clientEmail, clientAddress);
+            client = new Client(clientID, clientName, clientPhoneNumber, clientAddress);
 
             //Calls the Google Maps API to determine whether the user has entered a valid address
             if(client.validateClient(this) && checkInternetConnection()){
-                if(action.equals("update") || (action.equals("add") && !client.checkClientID(this))){
+                if(action.equals("update") || (action.equals("add"))){
                     //Displays ProgressBar
                     ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
                     progressBar.setVisibility(View.VISIBLE);
@@ -172,6 +172,11 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
                 client.setClientLatitude(location.getDouble("lat"));
                 client.setClientLongitude(location.getDouble("lng"));
                 requestWriteOfClient(client, action);
+            }
+            else {
+                //Hides ProgressBar
+                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+                progressBar.setVisibility(View.INVISIBLE);
             }
         }
         catch(Exception exc){

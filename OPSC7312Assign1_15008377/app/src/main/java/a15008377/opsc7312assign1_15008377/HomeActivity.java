@@ -10,17 +10,22 @@ package a15008377.opsc7312assign1_15008377;
 
 import android.*;
 import android.Manifest;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.MediaRouter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.CalendarContract;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.os.ResultReceiver;
@@ -48,6 +53,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IAPIConnectionResponse {
@@ -148,6 +154,7 @@ public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IA
             }
 
             lstDestinations = lstMarkers;
+
             //Sets up the Map for this Activity
             SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
             mapFragment.getMapAsync(this);
@@ -199,65 +206,57 @@ public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IA
 
     //Method sends the route information to the Google Maps API, which will then return the most efficient route between the destinations
     public void optimiseRoute(View view){
-        /*  LocationManager locManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
-        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
-
-            ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_COARSE_LOCATION  },
-                    LocationService.MY_PERMISSION_ACCESS_COURSE_LOCATION );
+        //Creates LocationManager and checks to ensure that the device has location permissions
+        final LocationManager locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        if(ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_COARSE_LOCATION  }, 1 );
         }
-        locManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,1000L,500.0f, locationListener);
-        Location location = locManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+        Intent intent = new Intent(HomeActivity.this, RoutePlannerActivity.class);
+        Bundle bundle = new Bundle();
+        String url = "https://maps.googleapis.com/maps/api/directions/json?origin=" + latLng.latitude + ", " + latLng.longitude + "&destination=" + latLng.latitude + ", " + latLng.longitude + "&waypoints=optimize:true";
+        for(int i = 0; i < lstDestinations.size(); i++){
+            url += "|" + lstDestinations.get(i).getLocation().latitude + "," + lstDestinations.get(i).getLocation().longitude;
+        }
+        url += "&key=AIzaSyB-hYaZ4URR-NVjYV0vpgIAUYb4B3Z9Y2g";
+        intent.putExtra("routeURL", url);
+        intent.putExtra("lstDeliveries", lstDeliveries);
+        startActivity(intent);
+/*
+        final LocationListener locationListener = new LocationListener() {
+            public void onLocationChanged(Location location) {
+                try {
+
+                }
+                catch (Exception ioe) {
+                    Toast.makeText(getApplicationContext(), ioe.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+
+            public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+            public void onProviderEnabled(String provider) {}
+
+            public void onProviderDisabled(String provider) {}
+        };
+
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,1000L,500.0f, locationListener);
+        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
         double latitude=0;
         double longitude=0;
         latitude = location.getLatitude();
-        longitude = location.getLongitude(); */
-        Intent intent = new Intent(HomeActivity.this, RoutePlannerActivity.class);
-        startActivity(intent);
-
-    /*    String url = "https://maps.googleapis.com/maps/api/directions/json?origin=6 Marine Drive, Umhlanga&destination=6 Marine Drive, Umhlanga&waypoints=optimize:true";
-        for(int i = 0; i < lstDestinations.size(); i++){
-            url += "|" + lstDestinations.get(i).getLocation().latitude + "," + lstDestinations.get(i).getLocation().longitude;
-        }
-        Log.d("URL", url);
-        APIConnection api = new APIConnection();
-        api.delegate = this;
-        api.execute(url); */
+        longitude = location.getLongitude();
+*/
     }
 
     //Method parses the JSON data that is returned from the Google Maps API
     @Override
     public void getJsonResponse(String response) {
         try{
-            String uri = "https://www.google.com/maps/dir/"+lstDestinations.get(0).getLocation().latitude+","+lstDestinations.get(0).getLocation().longitude+"/"+lstDestinations.get(1).getLocation().latitude+","+lstDestinations.get(1).getLocation().longitude+"/"+lstDestinations.get(2).getLocation().latitude+","+lstDestinations.get(2).getLocation().longitude;
-            //String uri = "https://www.google.com/maps/dir/San+Jose,+CA/GooglePlex/San+Francisco,+CA";
 
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
-            startActivity(Intent.createChooser(intent, "Select an application"));
-         /*
-            JSONObject jsonObject = new JSONObject(response);
-            JSONArray jsonArray = jsonObject.getJSONArray("routes");
 
-            JSONObject json = jsonArray.getJSONObject(0);
-            JSONArray legs = json.getJSONArray("legs");
-            JSONArray poly = json.getJSONArray("waypoint_order");
-            Toast.makeText(getApplicationContext(), "Most efficient order: ", Toast.LENGTH_LONG).show();
-            for(int i = 0; i < poly.length(); i++){
-                Toast.makeText(getApplicationContext(), lstDestinations.get(poly.getInt(i)).getMarkerTitle(), Toast.LENGTH_LONG).show();
-            }
-            JSONObject legObject;
-            JSONObject distance;
-            JSONObject duration;
-
-            for(int i = 0; i < legs.length(); i++){
-                legObject = legs.getJSONObject(i);
-                distance = legObject.getJSONObject("distance");
-                duration = legObject.getJSONObject("duration");
-                Toast.makeText(getApplicationContext(), "Distance: " + distance.getString("text"), Toast.LENGTH_LONG).show();
-                Toast.makeText(getApplicationContext(), "Duration: " + duration.getString("text"), Toast.LENGTH_LONG).show();
-            }
-
-            */
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();

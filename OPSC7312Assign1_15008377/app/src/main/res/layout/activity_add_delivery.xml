@@ -128,7 +128,7 @@
                 android:layout_below="@+id/button_add_delivery_item"/>
             <ListView
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
+                android:layout_height="350dp"
                 android:id="@+id/list_view_delivery_items"
                 android:fadeScrollbars="false"
                 android:layout_below="@id/text_delivery_items"/>

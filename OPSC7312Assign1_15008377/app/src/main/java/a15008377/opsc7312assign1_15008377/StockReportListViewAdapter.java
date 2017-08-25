@@ -142,11 +142,6 @@ public class StockReportListViewAdapter extends ArrayAdapter {
                 if (success) {
                     Toast.makeText(context, "Stock Item deleted successfully", Toast.LENGTH_LONG).show();
                 }
-
-
-                //Hides ProgressBar
-                //ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
-                //progressBar.setVisibility(View.INVISIBLE);
             }
         }
     }

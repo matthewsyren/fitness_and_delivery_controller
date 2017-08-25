@@ -9,7 +9,12 @@
 package a15008377.opsc7312assign1_15008377;
 
 import android.content.Context;
+import android.content.Intent;
+import android.os.Handler;
+import android.support.v4.os.ResultReceiver;
 import android.util.Patterns;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,23 +27,17 @@ public class Client implements Serializable{
     //Declarations
     private String clientID;
     private String clientName;
-    private String clientEmail;
+    private String clientPhoneNumber;
     private String clientAddress;
     private double clientLatitude;
     private double clientLongitude;
 
     //Constructor
-    public Client(String clientID, String clientName, String clientEmail, String clientAddress) {
+    public Client(String clientID, String clientName, String clientPhoneNumber, String clientAddress) {
         this.clientID = clientID;
         this.clientName = clientName;
-        this.clientEmail = clientEmail;
+        this.clientPhoneNumber = clientPhoneNumber;
         this.clientAddress = clientAddress;
-    }
-
-    public Client(String clientID, String clientName, String clientEmail, String clientAddress, double clientLatitude, double clientLongitude) {
-        this(clientID, clientName, clientEmail, clientAddress);
-        this.clientLatitude = clientLatitude;
-        this.clientLongitude = clientLongitude;
     }
 
     public Client(){}
@@ -52,8 +51,8 @@ public class Client implements Serializable{
         return clientName;
     }
 
-    public String getClientEmail() {
-        return clientEmail;
+    public String getClientPhoneNumber() {
+        return clientPhoneNumber;
     }
 
     public String getClientAddress() {
@@ -91,11 +90,8 @@ public class Client implements Serializable{
         else if(clientName.length() == 0){
             Toast.makeText(context, "Please enter a Client Name", Toast.LENGTH_LONG).show();
         }
-        else if(clientEmail.length() == 0){
-            Toast.makeText(context, "Please enter a Client Email", Toast.LENGTH_LONG).show();
-        }
-        else if(!Patterns.EMAIL_ADDRESS.matcher(clientEmail).matches()){
-            Toast.makeText(context, "Please enter a valid email address e.g. clientname@example.com", Toast.LENGTH_LONG).show();
+        else if(clientPhoneNumber.length() == 0){
+            Toast.makeText(context, "Please enter a Client Phone Number", Toast.LENGTH_LONG).show();
         }
         else if(clientAddress.length() == 0){
             Toast.makeText(context, "Please enter a Client Address", Toast.LENGTH_LONG).show();
@@ -106,18 +102,21 @@ public class Client implements Serializable{
         return validClient;
     }
 
-    //Method checks if the entered Client ID has already been taken. The method returns true if it has been taken, and false if it hasn't been taken
-    public boolean checkClientID(Context context) throws IOException {
-        boolean clientIDTaken = false;
-        /*DBAdapter dbAdapter = new DBAdapter(context);
-        dbAdapter.open();
-        Client client = dbAdapter.getClient(clientID);
-        if(client != null){
-            clientIDTaken = true;
-            Toast.makeText(context, "Client ID is taken, please choose another one", Toast.LENGTH_LONG).show();
+    //Method calls the FirebaseService class and requests the Clients from the Firebase Database
+    public void requestClients(String searchTerm, Context context, ResultReceiver resultReceiver){
+        try{
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(context).getUserKey();
+            Intent intent = new Intent(context, FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_FETCH_CLIENTS);
+            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
+            intent.putExtra(FirebaseService.RECEIVER, resultReceiver);
+            context.startService(intent);
         }
-        dbAdapter.close(); */
-        return clientIDTaken;
+        catch(Exception exc){
+            Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     //Method parses the JSOn from the response String passed into the method, and returns a JSONObject if the JSON is valid, otherwise it returns null

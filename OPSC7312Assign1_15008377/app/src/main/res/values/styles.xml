@@ -34,7 +34,7 @@
     </style>
 
     <style name="SecondaryButtonStyle">
-        <item name="android:background">@drawable/button</item>
+        <item name="android:background">@drawable/button_rounded</item>
         <item name="android:paddingLeft">@dimen/button_padding</item>
         <item name="android:paddingRight">@dimen/button_padding</item>
         <item name="android:textColor">@color/colorPrimary</item>

@@ -4,11 +4,13 @@ import android.location.LocationManager;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import java.io.Serializable;
+
 /**
  * Created by Matthew Syrén on 2017/07/29.
  */
 
-public class LocationMarker {
+public class LocationMarker{
     private LatLng location;
     private String markerTitle;
 

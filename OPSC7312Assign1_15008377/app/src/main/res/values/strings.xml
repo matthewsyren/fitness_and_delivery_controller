@@ -53,7 +53,7 @@
     <!-- ClientActivity -->
     <string name="label_client_id">Client ID</string>
     <string name="label_client_name">Client Name</string>
-    <string name="label_client_email">Client Email Address</string>
+    <string name="label_client_phone_number">Client Phone Number</string>
     <string name="label_client_address">Client Address</string>
     <string name="title_activity_client_control">ClientControlActivity</string>
     <string name="title_activity_delivery_control">DeliveryControlActivity</string>
@@ -97,7 +97,7 @@
     <!-- ClientReportListViewAdapter -->
     <string name="client_id">Stock ID: %s</string>
     <string name="client_name">Client Name: %s</string>
-    <string name="client_email">Client Email: %s</string>
+    <string name="client_phone_number">Client Phone Number: %s</string>
     <string name="client_address">Client Address: %s</string>
 
     <!-- DeliveryReportListViewAdapter -->
@@ -109,4 +109,7 @@
     <!-- DeliveryItemListViewAdapter -->
     <string name="delivery_item__id">ID: %s</string>
     <string name="delivery_item_quantity">Quantity: %d</string>
+
+    <string name="route_leg_dustance">Leg Distance: %s</string>
+    <string name="route_leg_duration">Leg Duration: %s</string>
 </resources>

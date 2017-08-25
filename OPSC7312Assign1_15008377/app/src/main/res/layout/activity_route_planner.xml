@@ -1,12 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="a15008377.opsc7311_assign2_15008377.RoutePlannerActivity">
+    tools:context="a15008377.opsc7312assign1_15008377.RoutePlannerActivity">
     <ListView
         android:id="@+id/list_view_planned_route"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
-</android.support.constraint.ConstraintLayout>
+        android:layout_height="match_parent"
+        android:layout_above="@+id/button_view_on_map"/>
+
+    <Button
+        android:id="@+id/button_view_on_map"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:text="View On Map"
+        android:background="@drawable/button"
+        android:onClick="viewOnMapOnClick"/>
+
+    <ProgressBar
+        android:layout_width="@dimen/progress_bar_diameter"
+        android:layout_height="@dimen/progress_bar_diameter"
+        android:id="@+id/progressBar"
+        android:layout_centerInParent="true"
+        android:visibility="invisible"/>
+</RelativeLayout>

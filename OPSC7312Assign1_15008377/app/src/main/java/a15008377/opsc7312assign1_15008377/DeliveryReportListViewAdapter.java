@@ -63,7 +63,7 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
         TextView txtDeliveryComplete;
         TextView txtDeliveryItems;
         ImageButton btnDeleteDelivery;
-        Button btnMarkDeliveryAsComplete;
+        ImageButton btnMarkDeliveryAsComplete;
 
         //Inflates the list_row view for the ListView
         LayoutInflater inflater = ((Activity)context).getLayoutInflater();
@@ -76,7 +76,7 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
         txtDeliveryComplete = (TextView) convertView.findViewById(R.id.text_delivery_complete);
         txtDeliveryItems = (TextView) convertView.findViewById(R.id.text_delivery_items);
         btnDeleteDelivery = (ImageButton) convertView.findViewById(R.id.button_delete_delivery);
-        btnMarkDeliveryAsComplete = (Button) convertView.findViewById(R.id.button_mark_delivery_as_complete);
+        btnMarkDeliveryAsComplete = (ImageButton) convertView.findViewById(R.id.button_mark_delivery_as_complete);
 
         //Displays the data in the appropriate Views
         Resources resources = context.getResources();
