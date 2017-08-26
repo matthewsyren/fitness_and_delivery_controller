@@ -8,55 +8,37 @@
 
 package a15008377.opsc7312assign1_15008377;
 
-import android.*;
 import android.Manifest;
-import android.content.ContentResolver;
-import android.content.ContentUris;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
-import android.graphics.Color;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
-import android.media.MediaRouter;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.CalendarContract;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.os.ResultReceiver;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import com.google.android.gms.common.annotation.KeepName;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
 
-public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IAPIConnectionResponse {
+public class Question2 extends BaseActivity implements OnMapReadyCallback, IAPIConnectionResponse {
     //Declarations
     GoogleMap gMap;
     ArrayList<LocationMarker> lstDestinations;
@@ -72,6 +54,10 @@ public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IA
             super.onCreateDrawer();
             super.setSelectedNavItem(R.id.nav_home);
 
+            //Hides FloatingActionButton
+            FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+            fab.setVisibility(View.INVISIBLE);
+
             requestDeliveries(null);
 
         }
@@ -84,14 +70,8 @@ public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IA
     @Override
     public void onMapReady(final GoogleMap googleMap) {
         try{
-            if(ContextCompat.checkSelfPermission(HomeActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(HomeActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PackageManager.PERMISSION_GRANTED);
-            }
-            else{
-                googleMap.setMyLocationEnabled(true);
-            }
-            if(ContextCompat.checkSelfPermission(HomeActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(HomeActivity.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PackageManager.PERMISSION_GRANTED);
+            if(ContextCompat.checkSelfPermission(Question2.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(Question2.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PackageManager.PERMISSION_GRANTED);
             }
             else{
                 googleMap.setMyLocationEnabled(true);
@@ -104,6 +84,25 @@ public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IA
                 googleMap.addMarker(new MarkerOptions().position(lstDestinations.get(i).getLocation()).title(lstDestinations.get(i).getMarkerTitle()));
                 builder.include(lstDestinations.get(i).getLocation());
             }
+
+            googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                @Override
+                public boolean onMarkerClick(Marker marker) {
+                    //Hides FloatingActionButton while a Marker displays its details (as the FloatingActionButton would cover the navigation button if it were visible)
+                    FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+                    fab.setVisibility(View.INVISIBLE);
+                    return false;
+                }
+            });
+
+            googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+                @Override
+                public void onMapClick(LatLng latLng) {
+                    //Displays FloatingActionButton when the user clicks away from a Marker
+                    FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+                    fab.setVisibility(View.VISIBLE);
+                }
+            });
 
             //Animates camera to zoom in on Markers once the map has been loaded
             final RelativeLayout layout = (RelativeLayout) findViewById(R.id.content_home);
@@ -135,6 +134,7 @@ public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IA
         }
     }
 
+    //Method creates an ArrayList of markers to be displayed on the map
     public void displayMarkers(ArrayList<Delivery> lstDeliveries, ArrayList<Client> lstClients){
         try{
             final ArrayList<LocationMarker> lstMarkers = new ArrayList<>();
@@ -154,6 +154,11 @@ public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IA
             }
 
             lstDestinations = lstMarkers;
+            if(lstMarkers.size() > 0){
+                //Displays FloatingActionButton
+                FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+                fab.setVisibility(View.VISIBLE);
+            }
 
             //Sets up the Map for this Activity
             SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -213,7 +218,7 @@ public class HomeActivity extends BaseActivity implements OnMapReadyCallback, IA
         }
         Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-        Intent intent = new Intent(HomeActivity.this, RoutePlannerActivity.class);
+        Intent intent = new Intent(Question2.this, RoutePlannerActivity.class);
         Bundle bundle = new Bundle();
         String url = "https://maps.googleapis.com/maps/api/directions/json?origin=" + latLng.latitude + ", " + latLng.longitude + "&destination=" + latLng.latitude + ", " + latLng.longitude + "&waypoints=optimize:true";
         for(int i = 0; i < lstDestinations.size(); i++){

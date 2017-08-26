@@ -105,7 +105,7 @@ public class LoginActivity extends AppCompatActivity {
             editor.apply();
 
             //Takes the user to the HomeActivity
-            Intent intent = new Intent(LoginActivity.this, Question1B.class);
+            Intent intent = new Intent(LoginActivity.this, StartActivity.class);
             startActivity(intent);
         }
         catch(Exception exc){

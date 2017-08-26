@@ -114,7 +114,7 @@ public class CreateAccountActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "Account successfully created!", Toast.LENGTH_LONG).show();
 
             //Takes the user to the next activity
-            Intent intent = new Intent(CreateAccountActivity.this, Question1B.class);
+            Intent intent = new Intent(CreateAccountActivity.this, StartActivity.class);
             startActivity(intent);
         }
         catch(Exception exc){

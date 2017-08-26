@@ -1,77 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    android:orientation="horizontal"
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:descendantFocusability="blocksDescendants">
-    <LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <android.support.v7.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="0.5">
-        <TextView
-            android:id="@+id/text_delivery_id"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-        <TextView
-            android:id="@+id/text_client_id"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-        <TextView
-            android:id="@+id/text_client_phone_number"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-        <TextView
-            android:id="@+id/text_client_address"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-        <TextView
-            android:id="@+id/text_leg_distance"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-        <TextView
-            android:id="@+id/text_leg_duration"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-    </LinearLayout>
-    <LinearLayout
-        android:orientation="horizontal"
-        android:id="@+id/relative_layout_delivery_options"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_weight="1">
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1">
-            <ImageButton
-                android:id="@+id/button_call"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:background="@drawable/button_rounded"
-                android:src="@drawable/ic_call_black_24dp"
-                android:layout_centerVertical="true"
-                android:layout_centerHorizontal="true"
-                android:tint="@color/colorPrimary"/>
-        </RelativeLayout>
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/app_bar_margin"
+        android:layout_marginBottom="@dimen/app_bar_margin"
+        android:layout_marginLeft="@dimen/button_padding"
+        android:layout_marginRight="@dimen/button_padding"
+        android:background="@color/white"
+        android:elevation="@dimen/card_view_content_padding"
+        app:contentPadding="@dimen/card_view_content_padding"
+        app:cardCornerRadius="@dimen/card_view_corner_margin">
+            <LinearLayout
+                android:orientation="horizontal"
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:descendantFocusability="blocksDescendants">
+                <LinearLayout
+                    xmlns:android="http://schemas.android.com/apk/res/android"
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.5">
+                    <TextView
+                        android:id="@+id/text_delivery_id"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                    <TextView
+                        android:id="@+id/text_client_id"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                    <TextView
+                        android:id="@+id/text_client_phone_number"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                    <TextView
+                        android:id="@+id/text_client_address"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                    <TextView
+                        android:id="@+id/text_leg_distance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                    <TextView
+                        android:id="@+id/text_leg_duration"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:id="@+id/relative_layout_delivery_options"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1">
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1">
+                        <ImageButton
+                            android:id="@+id/button_call_client"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:background="@drawable/button_rounded"
+                            android:src="@drawable/ic_call_black_24dp"
+                            android:layout_centerVertical="true"
+                            android:layout_centerHorizontal="true"
+                            android:tint="@color/colorPrimary"/>
+                    </RelativeLayout>
 
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:layout_marginRight="@dimen/activity_horizontal_margin">
-            <ImageButton
-                android:id="@+id/button_mark_as_complete"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_alignParentEnd="true"
-                android:background="@drawable/button_rounded"
-                android:src="@drawable/ic_done_black_24dp"
-                android:layout_centerVertical="true"
-                android:layout_centerHorizontal="true"
-                android:tint="@color/colorPrimary" />
-        </RelativeLayout>
-    </LinearLayout>
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginRight="@dimen/activity_horizontal_margin">
+                        <ImageButton
+                            android:id="@+id/button_mark_as_complete"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:layout_alignParentEnd="true"
+                            android:background="@drawable/button_rounded"
+                            android:src="@drawable/ic_done_black_24dp"
+                            android:layout_centerVertical="true"
+                            android:layout_centerHorizontal="true"
+                            android:tint="@color/colorPrimary" />
+                    </RelativeLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </android.support.v7.widget.CardView>
 </LinearLayout>

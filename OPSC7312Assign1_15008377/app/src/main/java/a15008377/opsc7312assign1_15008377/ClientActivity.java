@@ -10,10 +10,13 @@ package a15008377.opsc7312assign1_15008377;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.ContactsContract;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -38,8 +41,8 @@ import java.util.ArrayList;
 
 public class ClientActivity extends AppCompatActivity implements IAPIConnectionResponse{
     //Declarations
-    Client client;
-    String action;
+    private Client client;
+    private String action;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +55,40 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public void chooseContactOnClick(View view){
+        try{
+            Intent pickContactIntent = new Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"));
+            pickContactIntent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE); // Show user only contacts w/ phone numbers
+            startActivityForResult(pickContactIntent, 1);
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Learnt from https://developer.android.com/training/basics/intents/result.html
+    //Method fetches the contact number that the user chose from the contact picker, and writes the chosen contact number to the EditText that accepts contact numbers
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 1) {
+            if (resultCode == RESULT_OK) {
+                //Fetches the data returned from the contact picker
+                Uri contactUri = data.getData();
+                String[] projection = {ContactsContract.CommonDataKinds.Phone.NUMBER};
+                Cursor cursor = getContentResolver().query(contactUri, projection, null, null, null);
+                if(cursor.moveToFirst()){
+                    int column = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+                    String number = cursor.getString(column);
+                    cursor.close();
+
+                    //Sets the text of the EditText for the Client's phone number to the number returned from the contact picker
+                    EditText txtClientPhoneNumber = (EditText) findViewById(R.id.text_client_phone_number);
+                    txtClientPhoneNumber.setText(number);
+                }
+            }
         }
     }
 

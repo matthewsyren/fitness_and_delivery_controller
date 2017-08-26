@@ -90,7 +90,7 @@ public class BaseActivity extends FragmentActivity
 
         //Opens the appropriate Activity based on the menu item clicked in the Navigation Drawer
         if(id == R.id.nav_home){
-            startActivity(new Intent(getApplicationContext(), HomeActivity.class));
+            startActivity(new Intent(getApplicationContext(), Question2.class));
         }
         else if(id == R.id.nav_stock_control){
             startActivity(new Intent(getApplicationContext(), StockControlActivity.class));

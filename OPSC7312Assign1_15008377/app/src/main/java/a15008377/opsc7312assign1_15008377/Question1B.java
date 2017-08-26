@@ -52,7 +52,8 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
     private double distanceTravelled = 0;
     private StorageReference mStorageRef;
     private LocationManager locationManager;
-    LatLngBounds.Builder builder = new LatLngBounds.Builder();
+    private LatLngBounds.Builder builder = new LatLngBounds.Builder();
+    private int latLngBoundsCount = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,6 +91,24 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
         }
     }
 
+    public void toggleFloatingActionButtonImage(){
+        try{
+            //Changes the icon of the FloatingActionButton
+            FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.floating_action_button_track_route);
+            if(fab.getTag().equals("Stop")){
+                fab.setImageResource(R.drawable.ic_run);
+                fab.setTag("Run");
+            }
+            else{
+                fab.setImageResource(R.drawable.ic_stop);
+                fab.setTag("Stop");
+            }
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     //Method displays the map
     @Override
     public void onMapReady(final GoogleMap googleMap) {
@@ -114,8 +133,7 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
             zoomToLocation(latLng);
 
             //Changes the icon of the FloatingActionButton
-            FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.floating_action_button_track_route);
-            fab.setImageResource(R.drawable.ic_stop);
+            toggleFloatingActionButtonImage();
             Toast.makeText(getApplicationContext(), "Route tracking started", Toast.LENGTH_LONG).show();
 
             //Defines a LocationListener
@@ -124,6 +142,7 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
                 public void onLocationChanged(Location location) {
                     LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
                     builder.include(latLng);
+                    latLngBoundsCount++;
                     zoomToLocation(latLng);
                     drawPolyline(latLng);
                     if(previousLocation != null){
@@ -204,15 +223,20 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
             locationListener = null;
             Toast.makeText(getApplicationContext(), "Route tracking stopped", Toast.LENGTH_LONG).show();
 
-            //Zooms out to display the entire route taken by the user
-            LatLngBounds bounds = builder.build();
-            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, 250);
-            mMap.animateCamera(cameraUpdate);
+            if(latLngBoundsCount > 0){
+                //Zooms out to display the entire route taken by the user
+                LatLngBounds bounds = builder.build();
+                CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, 250);
+                mMap.animateCamera(cameraUpdate);
 
-            //Changes the icon of the FloatingActionButton
-            FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.floating_action_button_track_route);
-            fab.setImageResource(R.drawable.ic_run);
-            promptToSaveUserDetails();
+                //Changes the icon of the FloatingActionButton
+                toggleFloatingActionButtonImage();
+                promptToSaveUserDetails();
+            }
+            else{
+                Toast.makeText(getApplicationContext(), "No movement was detected, therefore there is no route to save", Toast.LENGTH_LONG).show();
+                toggleFloatingActionButtonImage();
+            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -221,30 +245,36 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
 
     //Method saves the details of the route taken by the user while tracking their location
     public void promptToSaveUserDetails(){
-        AlertDialog alertDialog = new AlertDialog.Builder(Question1B.this).create();
-        alertDialog.setTitle("Save Route?");
-        alertDialog.setMessage("Would you like to save the details of the route you took today?");
+        try{
+            AlertDialog alertDialog = new AlertDialog.Builder(Question1B.this).create();
+            alertDialog.setTitle("Save Route?");
+            alertDialog.setMessage("Would you like to save the details of the route you took today?");
 
-        //Creates OnClickListener for the Dialog message
-        DialogInterface.OnClickListener dialogOnClickListener = new DialogInterface.OnClickListener(){
-            @Override
-            public void onClick(DialogInterface dialog, int button) {
-                switch(button){
-                    case AlertDialog.BUTTON_POSITIVE:
-                        saveUserDetails();
-                        break;
-                    case AlertDialog.BUTTON_NEGATIVE:
-                        Toast.makeText(getApplicationContext(), "Route information not saved", Toast.LENGTH_LONG).show();
-                        break;
+            //Creates OnClickListener for the Dialog message
+            DialogInterface.OnClickListener dialogOnClickListener = new DialogInterface.OnClickListener(){
+                @Override
+                public void onClick(DialogInterface dialog, int button) {
+                    switch(button){
+                        case AlertDialog.BUTTON_POSITIVE:
+                            saveUserDetails();
+                            break;
+                        case AlertDialog.BUTTON_NEGATIVE:
+                            Toast.makeText(getApplicationContext(), "Route information not saved", Toast.LENGTH_LONG).show();
+                            break;
+                    }
                 }
-            }
-        };
+            };
 
-        //Assigns buttons and OnClickListener for the AlertDialog and displays the AlertDialog
-        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Yes", dialogOnClickListener);
-        alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "No", dialogOnClickListener);
-        alertDialog.setCanceledOnTouchOutside(false);
-        alertDialog.show();
+            //Assigns buttons and OnClickListener for the AlertDialog and displays the AlertDialog
+            alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Yes", dialogOnClickListener);
+            alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "No", dialogOnClickListener);
+            alertDialog.setCanceledOnTouchOutside(false);
+            alertDialog.show();
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+            toggleFloatingActionButtonImage();
+        }
     }
 
     //Method saves the user details to Firebase
@@ -272,6 +302,7 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+            toggleFloatingActionButtonImage();
         }
     }
 
@@ -322,6 +353,7 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+            toggleFloatingActionButtonImage();
         }
     }
 

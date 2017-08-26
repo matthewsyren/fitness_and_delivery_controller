@@ -78,4 +78,17 @@ public class User {
             }
         });
     }
+
+    //Method stores the user's username in the SharedPreferences of the device, which will keep them signed in every time they open the app
+    public void setActiveUsername(String username, Context context){
+        try{
+            SharedPreferences preferences = context.getSharedPreferences("", Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putString("userEmail", username);
+            editor.apply();
+        }
+        catch(Exception exc){
+            Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
 }

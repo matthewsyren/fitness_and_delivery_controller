@@ -55,7 +55,6 @@ import java.util.TimeZone;
 
 public class DeliveryActivity extends AppCompatActivity {
     //Declarations
-    private ArrayList<DeliveryItem> lstDeliveryItems;
     private String action;
     private String firebaseAction;
     private ArrayList<Stock> lstStock = new ArrayList<>();
@@ -156,11 +155,14 @@ public class DeliveryActivity extends AppCompatActivity {
     //Method alters Activity based on the action the user is performing
     public void displayViews(){
         try{
+            //Displays ProgressBar
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+            progressBar.setVisibility(View.VISIBLE);
+
             //Fetches the user's action from the Bundle
             Bundle bundle = getIntent().getExtras();
             action = bundle.getString("action");
             Button button = (Button) findViewById(R.id.button_add_delivery);
-            lstDeliveryItems = new ArrayList<>();
 
             //Changes Activity based on the user's action
             if(action.equals("update")){
@@ -179,11 +181,11 @@ public class DeliveryActivity extends AppCompatActivity {
 
                 //Sets Adapter for the list_view_delivery_items ListView (there will be no data initially as the user is adding a new Delivery
                 ListView listView = (ListView) findViewById(R.id.list_view_delivery_items);
-                DeliveryItemListViewAdapter adapter = new DeliveryItemListViewAdapter(this, new ArrayList<DeliveryItem>());
-                listView.setAdapter(adapter);
+                DeliveryItemListViewAdapter deliveryItemListViewAdapter = new DeliveryItemListViewAdapter(this, new ArrayList<DeliveryItem>());
+                listView.setAdapter(deliveryItemListViewAdapter);
 
                 //Sets DataSetObserver for the ListView's adapter, which will update the items displayed in the Spinner for Delivery Items whenever an item is added to/removed from the ListView
-                adapter.registerDataSetObserver(new DataSetObserver() {
+                deliveryItemListViewAdapter.registerDataSetObserver(new DataSetObserver() {
                     @Override
                     public void onChanged() {
                         super.onChanged();
@@ -230,6 +232,10 @@ public class DeliveryActivity extends AppCompatActivity {
             }
             Spinner spinner = (Spinner) findViewById(R.id.spinner_delivery_client);
             spinner.setAdapter(adapter);
+
+            //Hides ProgressBar
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
+            progressBar.setVisibility(View.INVISIBLE);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -299,6 +305,8 @@ public class DeliveryActivity extends AppCompatActivity {
                 @Override
                 public void onChanged() {
                     super.onChanged();
+                    firebaseAction = "stock";
+                    requestStockItems();
                 }
             });
         }
@@ -374,7 +382,6 @@ public class DeliveryActivity extends AppCompatActivity {
                 int deliveryItemQuantity = Integer.parseInt(txtQuantity.getText().toString());
                 deliveryItemID = deliveryItemID.substring(0, deliveryItemID.indexOf(" "));
                 DeliveryItem deliveryItem = new DeliveryItem(deliveryItemID, deliveryItemQuantity);
-                lstDeliveryItems.add(deliveryItem);
                 spinnerAdapter.remove(spinner.getSelectedItem().toString());
                 spinnerAdapter.notifyDataSetChanged();
 
@@ -472,9 +479,11 @@ public class DeliveryActivity extends AppCompatActivity {
 
                 //Writes the Delivery details to the database if the information is valid
                 if(delivery.validateDelivery(this)){
-                    requestWriteOfDelivery(delivery, action);
-                    newDelivery = delivery;
-                    updateStockLevels(lstUpdatedStockItems);
+                    if(action.equals("update") || (action.equals("add") && delivery.checkDeliveryDate(getApplicationContext()))){
+                        requestWriteOfDelivery(delivery, action);
+                        newDelivery = delivery;
+                        updateStockLevels(lstUpdatedStockItems);
+                    }
                 }
             }
         }

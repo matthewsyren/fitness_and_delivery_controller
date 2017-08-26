@@ -45,7 +45,7 @@ public class RoutePlannerActivity extends AppCompatActivity implements IAPIConne
         }
     }
 
-    //Method fetches the data for the day's Deliveries that was passed from the HomeActivity
+    //Method fetches the data for the day's Deliveries that was passed from the Question2
     public void fetchDeliveryDetails(){
         try{
             Bundle bundle = getIntent().getExtras();
@@ -72,8 +72,8 @@ public class RoutePlannerActivity extends AppCompatActivity implements IAPIConne
                 JSONObject jsonObject = new JSONObject(response);
                 JSONArray jsonArray = jsonObject.getJSONArray("routes");
                 Bundle bundle = getIntent().getExtras();
-                ArrayList<Delivery> lstDestinations = (ArrayList<Delivery>) bundle.getSerializable("lstDeliveries");
-                if(lstDestinations.size() <= 23){
+                ArrayList<Delivery> lstDeliveries = (ArrayList<Delivery>) bundle.getSerializable("lstDeliveries");
+                if(lstDeliveries.size() <= 23){
                     ArrayList<String> lstRoutes = new ArrayList<>();
                     JSONObject json = jsonArray.getJSONObject(0);
                     JSONArray legs = json.getJSONArray("legs");
@@ -89,7 +89,7 @@ public class RoutePlannerActivity extends AppCompatActivity implements IAPIConne
 
                     //Loops through the way points in the order specified by the Google Maps API (the optimised route), and adds the data to a WayPoint ArrayList
                     for(int i = 0; i < waypoints.length(); i++){
-                        Delivery delivery = lstDestinations.get(waypoints.getInt(i));
+                        Delivery delivery = lstDeliveries.get(waypoints.getInt(i));
                         String clientAddress = "";
                         String clientPhoneNumber = "";
                         for(Client client : lstClients){
@@ -115,9 +115,9 @@ public class RoutePlannerActivity extends AppCompatActivity implements IAPIConne
 
                     //Displays the data from lstWayPoints
                     ListView listView = (ListView) findViewById(R.id.list_view_planned_route);
-                    RouteListViewAdapter routeListViewAdapter = new RouteListViewAdapter(RoutePlannerActivity.this, lstWayPoints);
+                    RouteListViewAdapter routeListViewAdapter = new RouteListViewAdapter(RoutePlannerActivity.this, lstWayPoints, lstDeliveries);
                     listView.setAdapter(routeListViewAdapter);
-                    Toast.makeText(getApplicationContext(), "Route optimised", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(), "Route optimised, size: " + lstWayPoints.size(), Toast.LENGTH_LONG).show();
                 }
                 else{
                     Toast.makeText(getApplicationContext(), "Unable to calculate directions and optimise route, as too manny Deliveries have been entered for today", Toast.LENGTH_LONG).show();

@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context="a15008377.opsc7312assign1_15008377.HomeActivity">
+    tools:context="a15008377.opsc7312assign1_15008377.Question2">
 
     <android.support.design.widget.AppBarLayout
         android:layout_height="wrap_content"

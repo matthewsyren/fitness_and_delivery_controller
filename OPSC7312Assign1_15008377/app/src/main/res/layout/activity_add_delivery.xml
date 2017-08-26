@@ -66,14 +66,12 @@
                 android:layout_marginLeft="@dimen/activity_horizontal_margin"
                 style="@style/TextStyle"/>
 
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Choose Date"
+            <ImageButton
+                style="@style/SecondaryButtonStyle"
                 android:onClick="chooseDateOnClick"
                 android:layout_below="@+id/label_delivery_date"
                 android:id="@+id/button_choose_date"
-                style="@style/SecondaryButtonStyle" />
+                android:src="@drawable/ic_date_range_black_24dp" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -128,11 +126,10 @@
                 android:layout_below="@+id/button_add_delivery_item"/>
             <ListView
                 android:layout_width="match_parent"
-                android:layout_height="350dp"
+                android:layout_height="250dp"
                 android:id="@+id/list_view_delivery_items"
                 android:fadeScrollbars="false"
                 android:layout_below="@id/text_delivery_items"/>
-
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -64,7 +64,16 @@
                 android:id="@+id/text_client_phone_number"
                 style="@style/TextStyle"
                 android:inputType="phone"
-                android:layout_marginBottom="@dimen/activity_vertical_margin"/>
+                android:layout_marginBottom="@dimen/activity_vertical_margin"
+                android:layout_toLeftOf="@+id/button_choose_contact"/>
+
+            <ImageButton
+                android:id="@+id/button_choose_contact"
+                style="@style/SecondaryButtonStyle"
+                android:layout_alignParentEnd="true"
+                android:layout_below="@+id/label_client_phone_number"
+                android:src="@drawable/ic_perm_contact_calendar_black_24dp"
+                android:onClick="chooseContactOnClick"/>
 
             <TextView
                 android:layout_width="wrap_content"

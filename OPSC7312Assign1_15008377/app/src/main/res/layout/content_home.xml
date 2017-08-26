@@ -8,7 +8,7 @@
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:showIn="@layout/app_bar_home"
-    tools:context="a15008377.opsc7312assign1_15008377.HomeActivity">
+    tools:context="a15008377.opsc7312assign1_15008377.Question2">
 
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:map="http://schemas.android.com/apk/res-auto"
