@@ -33,6 +33,7 @@ public class StockReportListViewAdapter extends ArrayAdapter {
     //Declarations
     private Context context;
     private ArrayList<Stock> lstStock;
+    private int stockToBeDeletedPosition;
 
     //Constructor
     public StockReportListViewAdapter(Context context, ArrayList<Stock> stock) {
@@ -81,12 +82,8 @@ public class StockReportListViewAdapter extends ArrayAdapter {
                             try {
                                 switch (button) {
                                     case AlertDialog.BUTTON_POSITIVE:
-                                        //Removes the Stock item from the Stock.txt text file
-                                        String stockID = lstStock.get(position).getStockID();
-                                        //new Stock().deleteStockItem(stockID, context);
-                                        requestWriteOfStockItem(lstStock.get(position), "delete");
-                                        lstStock.remove(position);
-                                        notifyDataSetChanged();
+                                        stockToBeDeletedPosition = position;
+                                        new Delivery().requestDeliveries(null, context, new DataReceiver(new Handler()), 0);
                                         break;
                                     case AlertDialog.BUTTON_NEGATIVE:
                                         Toast.makeText(context, "Deletion cancelled", Toast.LENGTH_LONG).show();
@@ -110,24 +107,6 @@ public class StockReportListViewAdapter extends ArrayAdapter {
         return convertView;
     }
 
-    //Method calls the FirebaseService class and passes in a Stock object that must be written to the Firebase database
-    public void requestWriteOfStockItem(Stock stock, String action){
-        try{
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(context).getUserKey();
-            Intent intent = new Intent(context, FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_WRITE_STOCK);
-            intent.putExtra(FirebaseService.ACTION_WRITE_STOCK, stock);
-            intent.putExtra(FirebaseService.ACTION_WRITE_STOCK_INFORMATION, action);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            context.startService(intent);
-        }
-        catch(Exception exc){
-            Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
     //Creates a ResultReceiver to retrieve information from the FirebaseService
     private class DataReceiver extends ResultReceiver {
         private DataReceiver(Handler handler) {
@@ -140,7 +119,29 @@ public class StockReportListViewAdapter extends ArrayAdapter {
                 boolean success = resultData.getBoolean(FirebaseService.ACTION_WRITE_STOCK);
 
                 if (success) {
+                    lstStock.remove(stockToBeDeletedPosition);
+                    notifyDataSetChanged();
                     Toast.makeText(context, "Stock Item deleted successfully", Toast.LENGTH_LONG).show();
+                }
+            }
+            else if(resultCode == FirebaseService.ACTION_FETCH_DELIVERIES_RESULT_CODE){
+                ArrayList<Delivery> lstDeliveries = (ArrayList<Delivery>) resultData.getSerializable(FirebaseService.ACTION_FETCH_DELIVERIES);
+                boolean stockUsed = false;
+                for(int i = 0; i < lstDeliveries.size() && stockUsed == false; i++){
+                    Delivery delivery = lstDeliveries.get(i);
+                    for(DeliveryItem deliveryItem : delivery.getLstDeliveryItems()){
+                        if(deliveryItem.getDeliveryStockID().equals(lstStock.get(stockToBeDeletedPosition).getStockID())){
+                            stockUsed = true;
+                            break;
+                        }
+                    }
+                }
+
+                if(!stockUsed){
+                    lstStock.get(stockToBeDeletedPosition).requestWriteOfStockItem(context, "delete", new DataReceiver(new Handler()));
+                }
+                else{
+                    Toast.makeText(context, "There are Deliveries that use this Stock Item, please remove this Stock Item from all Deliveries before deleting it.", Toast.LENGTH_LONG).show();
                 }
             }
         }

@@ -26,14 +26,14 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
         android:layout_margin="@dimen/fab_margin"
-        app:srcCompat="@drawable/ic_list_black_24dp"
+        app:srcCompat="@drawable/ic_navigation_black_24dp"
         android:background="@color/colorPrimary"
         android:onClick="optimiseRoute"/>
 
     <ProgressBar
         android:layout_width="@dimen/progress_bar_diameter"
         android:layout_height="@dimen/progress_bar_diameter"
-        android:id="@+id/progressBar"
+        android:id="@+id/progress_bar"
         android:layout_centerInParent="true"
         android:visibility="invisible"/>
 </RelativeLayout>

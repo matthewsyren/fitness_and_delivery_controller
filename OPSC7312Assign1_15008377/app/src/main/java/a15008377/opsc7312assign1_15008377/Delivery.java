@@ -13,7 +13,9 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.os.Handler;
+import android.support.v4.media.MediaBrowserServiceCompat;
 import android.support.v4.os.ResultReceiver;
+import android.view.View;
 import android.widget.Toast;
 import java.io.IOException;
 import java.io.Serializable;
@@ -124,6 +126,24 @@ public class Delivery implements Serializable {
         }
 
         return validDate;
+    }
+
+    //Method calls the FirebaseService class and requests the Clients from the Firebase Database
+    public void requestDeliveries(String searchTerm, Context context, ResultReceiver resultReceiver, int deliveryComplete){
+        try{
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(context).getUserKey();
+            Intent intent = new Intent(context, FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_FETCH_DELIVERIES);
+            intent.putExtra(FirebaseService.DELIVERY_COMPLETE, deliveryComplete);
+            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
+            intent.putExtra(FirebaseService.RECEIVER, resultReceiver);
+            context.startService(intent);
+        }
+        catch(Exception exc){
+            Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     //Method calls the FirebaseService class and passes in a Delivery object that must be written to the Firebase database

@@ -6,6 +6,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -27,8 +28,7 @@ public class RouteViewerActivity extends AppCompatActivity {
     public void displayImage(){
         try{
             //Displays ProgressBar
-            final ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.VISIBLE);
+            toggleProgressBarVisibility(View.VISIBLE);
 
             Bundle bundle = getIntent().getExtras();
             String imageURL = bundle.getString("imageURL");
@@ -42,7 +42,7 @@ public class RouteViewerActivity extends AppCompatActivity {
                 public void onSuccess(byte[] bytes) {
                     Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                     imageView.setImageBitmap(bitmap);
-                    progressBar.setVisibility(View.INVISIBLE);
+                    toggleProgressBarVisibility(View.INVISIBLE);
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
@@ -50,6 +50,26 @@ public class RouteViewerActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
                 }
             });
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    public void toggleProgressBarVisibility(int visibility){
+        try{
+            //Toggles ProgressBar visibility
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
+            progressBar.setVisibility(visibility);
+
+            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
+            if(visibility == View.VISIBLE){
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+            else{
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();

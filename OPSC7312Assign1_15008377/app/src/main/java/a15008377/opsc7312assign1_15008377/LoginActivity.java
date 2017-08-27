@@ -8,6 +8,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -28,7 +29,7 @@ public class LoginActivity extends AppCompatActivity {
             firebaseAuth = FirebaseAuth.getInstance();
 
             //Hides ProgressBar
-            toggleProgressBar(View.INVISIBLE);
+            toggleProgressBarVisibility(View.INVISIBLE);
 
             //Takes the user to the HomeActivity if they have already signed in
             User user = new User(this);
@@ -42,11 +43,20 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    //Method toggles the visibility of the ProgressBar
-    public void toggleProgressBar(int visibility){
+    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    public void toggleProgressBarVisibility(int visibility){
         try{
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar);
+            //Toggles ProgressBar visibility
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
             progressBar.setVisibility(visibility);
+
+            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
+            if(visibility == View.VISIBLE){
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+            else{
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -70,7 +80,7 @@ public class LoginActivity extends AppCompatActivity {
             final LoginActivity loginActivity = this;
 
             //Displays ProgressBar
-            toggleProgressBar(View.VISIBLE);
+            toggleProgressBarVisibility(View.VISIBLE);
 
             //Tries to sign the user in using the Firebase authentication database
             firebaseAuth.signInWithEmailAndPassword(user.getUserEmailAddress(), user.getUserPassword()).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
@@ -84,7 +94,7 @@ public class LoginActivity extends AppCompatActivity {
                     else{
                         Log.w("TAG", "signInWithEmail", task.getException());
                         Toast.makeText(LoginActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
-                        toggleProgressBar(View.INVISIBLE);
+                        toggleProgressBarVisibility(View.INVISIBLE);
                     }
                 }
             });

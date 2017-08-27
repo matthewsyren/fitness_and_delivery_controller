@@ -22,6 +22,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.os.ResultReceiver;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
@@ -38,7 +39,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import java.util.ArrayList;
 import java.util.Calendar;
 
-public class Question2 extends BaseActivity implements OnMapReadyCallback, IAPIConnectionResponse {
+public class Question2 extends BaseActivity implements OnMapReadyCallback {
     //Declarations
     GoogleMap gMap;
     ArrayList<LocationMarker> lstDestinations;
@@ -57,7 +58,6 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback, IAPIC
             //Hides FloatingActionButton
             FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
             fab.setVisibility(View.INVISIBLE);
-
             requestDeliveries(null);
 
         }
@@ -174,8 +174,7 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback, IAPIC
     public void requestDeliveries(String searchTerm){
         try{
             //Displays ProgressBar
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.VISIBLE);
+            toggleProgressBarVisibility(View.VISIBLE);
 
             //Requests location information from the LocationService class
             String firebaseKey = new User(this).getUserKey();
@@ -211,57 +210,44 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback, IAPIC
 
     //Method sends the route information to the Google Maps API, which will then return the most efficient route between the destinations
     public void optimiseRoute(View view){
-        //Creates LocationManager and checks to ensure that the device has location permissions
-        final LocationManager locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
-        if(ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
-            ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_COARSE_LOCATION  }, 1 );
-        }
-        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-        Intent intent = new Intent(Question2.this, RoutePlannerActivity.class);
-        Bundle bundle = new Bundle();
-        String url = "https://maps.googleapis.com/maps/api/directions/json?origin=" + latLng.latitude + ", " + latLng.longitude + "&destination=" + latLng.latitude + ", " + latLng.longitude + "&waypoints=optimize:true";
-        for(int i = 0; i < lstDestinations.size(); i++){
-            url += "|" + lstDestinations.get(i).getLocation().latitude + "," + lstDestinations.get(i).getLocation().longitude;
-        }
-        url += "&key=AIzaSyB-hYaZ4URR-NVjYV0vpgIAUYb4B3Z9Y2g";
-        intent.putExtra("routeURL", url);
-        intent.putExtra("lstDeliveries", lstDeliveries);
-        startActivity(intent);
-/*
-        final LocationListener locationListener = new LocationListener() {
-            public void onLocationChanged(Location location) {
-                try {
-
-                }
-                catch (Exception ioe) {
-                    Toast.makeText(getApplicationContext(), ioe.getMessage(), Toast.LENGTH_LONG).show();
-                }
+        if(lstDestinations.size() <= 23){
+            //Creates LocationManager and checks to ensure that the device has location permissions
+            final LocationManager locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+            if(ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+                ActivityCompat.requestPermissions( this, new String[] {  Manifest.permission.ACCESS_FINE_LOCATION  }, 1 );
             }
-
-            public void onStatusChanged(String provider, int status, Bundle extras) {}
-
-            public void onProviderEnabled(String provider) {}
-
-            public void onProviderDisabled(String provider) {}
-        };
-
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,1000L,500.0f, locationListener);
-        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-
-        double latitude=0;
-        double longitude=0;
-        latitude = location.getLatitude();
-        longitude = location.getLongitude();
-*/
+            Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+            Intent intent = new Intent(Question2.this, RoutePlannerActivity.class);
+            String url = "https://maps.googleapis.com/maps/api/directions/json?origin=" + latLng.latitude + ", " + latLng.longitude + "&destination=" + latLng.latitude + ", " + latLng.longitude + "&waypoints=optimize:true";
+            for(int i = 0; i < lstDestinations.size(); i++){
+                url += "|" + lstDestinations.get(i).getLocation().latitude + "," + lstDestinations.get(i).getLocation().longitude;
+            }
+            url += "&key=AIzaSyB-hYaZ4URR-NVjYV0vpgIAUYb4B3Z9Y2g";
+            intent.putExtra("routeURL", url);
+            intent.putExtra("lstDeliveries", lstDeliveries);
+            startActivity(intent);
+        }
+        else{
+            Toast.makeText(getApplicationContext(), "Unable to calculate directions and optimise route, as too manny Deliveries have been entered for today. If you would like to optimise the route, you will need to have less than 23 Deliveries scheduled for today.", Toast.LENGTH_LONG).show();
+        }
     }
 
-    //Method parses the JSON data that is returned from the Google Maps API
-    @Override
-    public void getJsonResponse(String response) {
+    //https://stackoverflow.com/questions/36918219/how-to-disable-user-interaction-while-progressbar-is-visible-in-android
+    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    public void toggleProgressBarVisibility(int visibility){
         try{
+            //Toggles ProgressBar visibility
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
+            progressBar.setVisibility(visibility);
 
-
+            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
+            if(visibility == View.VISIBLE){
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+            else{
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -278,8 +264,6 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback, IAPIC
         protected void onReceiveResult(int resultCode, Bundle resultData){
             if(resultCode == FirebaseService.ACTION_FETCH_DELIVERIES_RESULT_CODE){
                 lstDeliveries = (ArrayList<Delivery>) resultData.getSerializable(FirebaseService.ACTION_FETCH_DELIVERIES);
-
-                //displayMarkers(lstDeliveries);
                 requestClients(null);
             }
             else if(resultCode == FirebaseService.ACTION_FETCH_CLIENTS_RESULT_CODE){
@@ -287,9 +271,7 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback, IAPIC
                 displayMarkers(lstDeliveries, lstClients);
             }
 
-            //Hides ProgressBar
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.INVISIBLE);
+            toggleProgressBarVisibility(View.INVISIBLE);
         }
     }
 }

@@ -112,4 +112,7 @@
 
     <string name="route_leg_dustance">Leg Distance: %s</string>
     <string name="route_leg_duration">Leg Duration: %s</string>
+
+    <!-- Question1A -->
+    <string name="current_address">Current Address: %s</string>
 </resources>

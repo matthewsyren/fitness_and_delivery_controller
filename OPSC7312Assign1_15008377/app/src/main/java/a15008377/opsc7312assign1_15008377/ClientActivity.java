@@ -20,24 +20,14 @@ import android.provider.ContactsContract;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
-
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-
 import org.json.JSONObject;
-
-import java.util.ArrayList;
 
 public class ClientActivity extends AppCompatActivity implements IAPIConnectionResponse{
     //Declarations
@@ -182,8 +172,7 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
             if(client.validateClient(this) && checkInternetConnection()){
                 if(action.equals("update") || (action.equals("add"))){
                     //Displays ProgressBar
-                    ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-                    progressBar.setVisibility(View.VISIBLE);
+                    toggleProgressBarVisibility(View.VISIBLE);
 
                     //Fetches coordinates of address entered by the user from the Google Maps API
                     APIConnection api = new APIConnection();
@@ -208,38 +197,19 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
             if(location != null){
                 client.setClientLatitude(location.getDouble("lat"));
                 client.setClientLongitude(location.getDouble("lng"));
-                requestWriteOfClient(client, action);
+
+                //Displays ProgressBar
+                toggleProgressBarVisibility(View.VISIBLE);
+
+                client.requestWriteOfClient(action, this, new DataReceiver(new Handler()));
             }
             else {
                 //Hides ProgressBar
-                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-                progressBar.setVisibility(View.INVISIBLE);
+                toggleProgressBarVisibility(View.INVISIBLE);
             }
         }
         catch(Exception exc){
             exc.printStackTrace();
-            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    //Method calls the FirebaseService class and passes in a Client object that must be written to the Firebase database
-    public void requestWriteOfClient(Client client, String action){
-        try{
-            //Displays ProgressBar
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.VISIBLE);
-
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(this).getUserKey();
-            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_WRITE_CLIENT);
-            intent.putExtra(FirebaseService.ACTION_WRITE_CLIENT, client);
-            intent.putExtra(FirebaseService.ACTION_WRITE_CLIENT_INFORMATION, action);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            startService(intent);
-        }
-        catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
@@ -261,6 +231,26 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
         return connected;
+    }
+
+    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    public void toggleProgressBarVisibility(int visibility){
+        try{
+            //Toggles ProgressBar visibility
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
+            progressBar.setVisibility(visibility);
+
+            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
+            if(visibility == View.VISIBLE){
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+            else{
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     //Creates a ResultReceiver to retrieve information from the FirebaseService
@@ -293,8 +283,7 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
             }
 
             //Hides ProgressBar
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.INVISIBLE);
+            toggleProgressBarVisibility(View.INVISIBLE);
         }
     }
 }

@@ -18,6 +18,7 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
@@ -64,9 +65,11 @@ public class StockControlActivity extends BaseActivity {
 
                 }
             });
+            //Displays ProgressBar
+            toggleProgressBarVisibility(View.VISIBLE);
 
-            //Method populates the Stock report
-            requestStockItems(null);
+            //Fetches the Stock Items from the Firebase Database
+            new Stock().requestStockItems(null, this, new DataReceiver(new Handler()));
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -78,7 +81,12 @@ public class StockControlActivity extends BaseActivity {
     public void onResume(){
         try{
             super.onResume();
-            requestStockItems(null);
+
+            //Displays ProgressBar
+            toggleProgressBarVisibility(View.VISIBLE);
+
+            //Fetches the Stock Items from the Firebase Database
+            new Stock().requestStockItems(null, this, new DataReceiver(new Handler()));
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -90,7 +98,12 @@ public class StockControlActivity extends BaseActivity {
         try{
             //Fetches the search term and requests Stock items that match the search term
             String searchTerm = txtSearchStock.getText().toString();
-            requestStockItems(searchTerm);
+
+            //Displays ProgressBar
+            toggleProgressBarVisibility(View.VISIBLE);
+
+            //Fetches the Stock Items from the Firebase Database
+            new Stock().requestStockItems(searchTerm, this, new DataReceiver(new Handler()));
         }
         catch(Exception exc){
             Toast.makeText(getBaseContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -132,21 +145,20 @@ public class StockControlActivity extends BaseActivity {
         }
     }
 
-    //Method calls the FirebaseService class and requests the Stock items from the Firebase Database
-    public void requestStockItems(String searchTerm){
+    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    public void toggleProgressBarVisibility(int visibility){
         try{
-            //Displays ProgressBar
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.VISIBLE);
+            //Toggles ProgressBar visibility
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
+            progressBar.setVisibility(visibility);
 
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(this).getUserKey();
-            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_FETCH_STOCK);
-            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            startService(intent);
+            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
+            if(visibility == View.VISIBLE){
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+            else{
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -174,8 +186,7 @@ public class StockControlActivity extends BaseActivity {
                 displayStock(lstStock);
 
                 //Hides ProgressBar
-                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-                progressBar.setVisibility(View.INVISIBLE);
+                toggleProgressBarVisibility(View.INVISIBLE);
             }
         }
     }

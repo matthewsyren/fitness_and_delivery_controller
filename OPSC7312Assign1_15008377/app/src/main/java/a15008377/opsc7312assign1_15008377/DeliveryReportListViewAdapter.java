@@ -41,10 +41,10 @@ import java.util.ArrayList;
 @SuppressWarnings("WeakerAccess")
 public class DeliveryReportListViewAdapter extends ArrayAdapter {
     //Declarations
-    Context context;
+    private Context context;
     private ArrayList<Delivery> lstDeliveries;
-    String action;
-    Delivery deliveryToBeDeleted;
+    private String action;
+    private int deliveryToBeDeletedPosition;
 
     public DeliveryReportListViewAdapter(Context context, ArrayList<Delivery> lstDeliveries) {
         super(context, R.layout.list_view_row_delivery_report,lstDeliveries);
@@ -110,26 +110,12 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
                         @Override
                         public void onClick(DialogInterface dialog, int button) {
                             switch(button){
-                                //Checks if the username is valid (length > 0 and every character is an alphabetic character)
+                                //Deletes Delivery item if the user chooses the 'Yes' option
                                 case AlertDialog.BUTTON_POSITIVE:
                                     action = "delete";
-                                    requestWriteOfDelivery(lstDeliveries.get(position), action);
-                                    deliveryToBeDeleted = lstDeliveries.get(position);
-                                    requestStockItems(null);
-                                    /*DBAdapter dbAdapter = new DBAdapter(context);
-                                    dbAdapter.open();
-
-                                    String deliveryID = lstDeliveries.get(position).getDeliveryID();
-
-                                    //Deletes the Delivery and all DeliveryItems for that Delivery
-                                    if(dbAdapter.deleteDelivery(deliveryID)){
-                                        dbAdapter.deleteDeliveryItems(deliveryID);
-                                        addItemsBackToStock(lstDeliveries.get(position));
-                                        lstDeliveries.remove(position);
-                                        Toast.makeText(context, "Delivery successfully deleted", Toast.LENGTH_LONG).show();
-                                        notifyDataSetChanged();
-                                    }
-                                    dbAdapter.close(); */
+                                    lstDeliveries.get(position).requestWriteOfDelivery(context, action, new DataReceiver(new Handler()));
+                                    deliveryToBeDeletedPosition = position;
+                                    new Stock().requestStockItems(null, context, new DataReceiver(new Handler()));
                                     break;
                                 case AlertDialog.BUTTON_NEGATIVE:
                                     Toast.makeText(context, "Deletion cancelled", Toast.LENGTH_LONG).show();
@@ -154,7 +140,7 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
                         action = "update";
                         Delivery delivery = lstDeliveries.get(position);
                         delivery.setDeliveryComplete(1);
-                        requestWriteOfDelivery(delivery, action);
+                        delivery.requestWriteOfDelivery(context, action, new DataReceiver(new Handler()));
                         lstDeliveries.remove(position);
                         notifyDataSetChanged();
                     }
@@ -176,7 +162,9 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
     //Method adds the items that were in the deleted Delivery back to the Stock.txt text file
     private void addItemsBackToStock(ArrayList<Stock> lstStock){
         try{
-            ArrayList<DeliveryItem> lstDeliveryItems = deliveryToBeDeleted.getLstDeliveryItems();
+            Log.v("GUBS", "Size is : " + deliveryToBeDeletedPosition);
+
+            ArrayList<DeliveryItem> lstDeliveryItems = lstDeliveries.get(deliveryToBeDeletedPosition).getLstDeliveryItems();
             ArrayList<Stock> lstStockToBeUpdated = new ArrayList<>();
 
             //Loops through all DeliveryItems and adds them back to Stock
@@ -195,41 +183,6 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
 
             //Writes the updated Stock quantities to the Firebase Database
             updateStockLevels(lstStockToBeUpdated);
-        }
-        catch(Exception exc){
-            Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    //Method calls the FirebaseService class and requests the Stock items from the Firebase Database
-    public void requestStockItems(String searchTerm){
-        try{
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(context).getUserKey();
-            Intent intent = new Intent(context, FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_FETCH_STOCK);
-            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            context.startService(intent);
-        }
-        catch(Exception exc){
-            Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    //Method calls the FirebaseService class and passes in a Delivery object that must be written to the Firebase database
-    public void requestWriteOfDelivery(Delivery delivery, String action){
-        try{
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(context).getUserKey();
-            Intent intent = new Intent(context, FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_WRITE_DELIVERY);
-            intent.putExtra(FirebaseService.ACTION_WRITE_DELIVERY, delivery);
-            intent.putExtra(FirebaseService.ACTION_WRITE_DELIVERY_INFORMATION, action);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            context.startService(intent);
         }
         catch(Exception exc){
             Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -288,6 +241,8 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
             else if(resultCode == FirebaseService.ACTION_FETCH_STOCK_RESULT_CODE){
                 ArrayList<Stock> lstStock = (ArrayList<Stock>) resultData.getSerializable(FirebaseService.ACTION_FETCH_STOCK);
                 addItemsBackToStock(lstStock);
+                lstDeliveries.remove(deliveryToBeDeletedPosition);
+                notifyDataSetChanged();
             }
         }
     }

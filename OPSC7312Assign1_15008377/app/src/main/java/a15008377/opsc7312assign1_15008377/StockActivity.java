@@ -17,6 +17,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
@@ -35,7 +36,9 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 public class StockActivity extends AppCompatActivity {
+    //Declarations
     String action;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         try{
@@ -120,8 +123,8 @@ public class StockActivity extends AppCompatActivity {
     //Method adds/updates the Stock details to the database
     public void addStockOnClick(View view) {
         try{
-            final ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.VISIBLE);
+            //Displays ProgressBar
+            toggleProgressBarVisibility(View.VISIBLE);
 
             EditText txtStockID = (EditText) findViewById(R.id.text_stock_id);
             EditText txtStockDescription = (EditText) findViewById(R.id.text_stock_description);
@@ -133,7 +136,10 @@ public class StockActivity extends AppCompatActivity {
 
             final Stock stock = new Stock(stockID, stockDescription, stockQuantity);
             if(stock.validateStock(this)){
-                requestWriteOfStockItem(stock, action);
+                //Displays ProgressBar
+                toggleProgressBarVisibility(View.VISIBLE);
+
+                stock.requestWriteOfStockItem(this, action, new DataReceiver(new Handler()));
             }
         }
         catch(NumberFormatException nfe){
@@ -144,22 +150,20 @@ public class StockActivity extends AppCompatActivity {
         }
     }
 
-    //Method calls the FirebaseService class and passes in a Stock object that must be written to the Firebase database
-    public void requestWriteOfStockItem(Stock stock, String action){
+    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    public void toggleProgressBarVisibility(int visibility){
         try{
-            //Displays ProgressBar
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.VISIBLE);
+            //Toggles ProgressBar visibility
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
+            progressBar.setVisibility(visibility);
 
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(this).getUserKey();
-            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_WRITE_STOCK);
-            intent.putExtra(FirebaseService.ACTION_WRITE_STOCK, stock);
-            intent.putExtra(FirebaseService.ACTION_WRITE_STOCK_INFORMATION, action);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            startService(intent);
+            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
+            if(visibility == View.VISIBLE){
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+            else{
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -197,8 +201,7 @@ public class StockActivity extends AppCompatActivity {
                 }
 
                 //Hides ProgressBar
-                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-                progressBar.setVisibility(View.INVISIBLE);
+                toggleProgressBarVisibility(View.INVISIBLE);
             }
         }
     }

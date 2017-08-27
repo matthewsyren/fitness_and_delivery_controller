@@ -19,6 +19,7 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
@@ -65,9 +66,11 @@ public class ClientControlActivity extends BaseActivity{
 
                 }
             });
+            //Displays ProgresBar
+            toggleProgressBarVisibility(View.VISIBLE);
 
             //Populates the views that need to be displayed on the Activity
-            requestClients(null);
+            new Client().requestClients(null, this, new DataReceiver(new Handler()));
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -79,7 +82,11 @@ public class ClientControlActivity extends BaseActivity{
     public void onResume(){
         try{
             super.onResume();
-            requestClients(null);
+            //Displays ProgresBar
+            toggleProgressBarVisibility(View.VISIBLE);
+
+            //Populates the views that need to be displayed on the Activity
+            new Client().requestClients(null, this, new DataReceiver(new Handler()));
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -91,28 +98,7 @@ public class ClientControlActivity extends BaseActivity{
         try{
             //Fetches the search term and requests Clients that match the search term
             String searchTerm = txtSearchClient.getText().toString();
-            requestClients(searchTerm);
-        }
-        catch(Exception exc){
-            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    //Method calls the FirebaseService class and requests the Clients from the Firebase Database
-    public void requestClients(String searchTerm){
-        try{
-            //Displays ProgressBar
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.VISIBLE);
-
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(this).getUserKey();
-            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_FETCH_CLIENTS);
-            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            startService(intent);
+            new Client().requestClients(searchTerm, this, new DataReceiver(new Handler()));
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -159,6 +145,26 @@ public class ClientControlActivity extends BaseActivity{
         }
     }
 
+    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    public void toggleProgressBarVisibility(int visibility){
+        try{
+            //Toggles ProgressBar visibility
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
+            progressBar.setVisibility(visibility);
+
+            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
+            if(visibility == View.VISIBLE){
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+            else{
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     //Creates a ResultReceiver to retrieve information from the FirebaseService
     private class DataReceiver extends ResultReceiver {
         private DataReceiver(Handler handler) {
@@ -170,7 +176,7 @@ public class ClientControlActivity extends BaseActivity{
             if(resultCode == FirebaseService.ACTION_FETCH_CLIENTS_RESULT_CODE){
                 ArrayList<Client> lstClients = (ArrayList<Client>) resultData.getSerializable(FirebaseService.ACTION_FETCH_CLIENTS);
 
-                //Displays error message if there are no Stock items to display
+                //Displays error message if there are no Clients to display
                 if(lstClients.size() == 0){
                     Toast.makeText(getApplicationContext(), "There are currently no Clients added", Toast.LENGTH_LONG).show();
                 }
@@ -180,8 +186,7 @@ public class ClientControlActivity extends BaseActivity{
                 displayClients(lstClients);
 
                 //Hides ProgressBar
-                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-                progressBar.setVisibility(View.INVISIBLE);
+                toggleProgressBarVisibility(View.INVISIBLE);
             }
         }
     }

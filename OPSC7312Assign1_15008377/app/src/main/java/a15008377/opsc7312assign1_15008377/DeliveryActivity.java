@@ -27,10 +27,12 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Adapter;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -70,8 +72,8 @@ public class DeliveryActivity extends AppCompatActivity {
             //Methods display all required information for the Activity
             displayViews();
             firebaseAction = "stock";
-            requestStockItems();
-            requestClients();
+            new Stock().requestStockItems(null, this, new DataReceiver(new Handler()));
+            new Client().requestClients(null, this, new DataReceiver(new Handler()));
 
             if(ContextCompat.checkSelfPermission(DeliveryActivity.this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED){
                 ActivityCompat.requestPermissions(DeliveryActivity.this, new String[]{Manifest.permission.WRITE_CALENDAR}, PackageManager.PERMISSION_GRANTED);
@@ -114,50 +116,11 @@ public class DeliveryActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    //Method calls the FirebaseService class and requests the Clients from the Firebase Database
-    public void requestClients(){
-        try{
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(this).getUserKey();
-            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_FETCH_CLIENTS);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            startService(intent);
-        }
-        catch(Exception exc){
-            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    //Method calls the FirebaseService class and requests the Clients from the Firebase Database
-    public void requestDeliveries(String searchTerm){
-        try{
-            //Displays ProgressBar
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.VISIBLE);
-
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(this).getUserKey();
-            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_FETCH_DELIVERIES);
-            intent.putExtra(FirebaseService.DELIVERY_COMPLETE, 0);
-            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            startService(intent);
-        }
-        catch(Exception exc){
-            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
     //Method alters Activity based on the action the user is performing
     public void displayViews(){
         try{
             //Displays ProgressBar
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.VISIBLE);
+            toggleProgressBarVisibility(View.VISIBLE);
 
             //Fetches the user's action from the Bundle
             Bundle bundle = getIntent().getExtras();
@@ -190,7 +153,7 @@ public class DeliveryActivity extends AppCompatActivity {
                     public void onChanged() {
                         super.onChanged();
                         firebaseAction = "stock";
-                        requestStockItems();
+                        new Stock().requestStockItems(null, getApplicationContext(), new DataReceiver(new Handler()));
                     }
                 });
             }
@@ -234,24 +197,7 @@ public class DeliveryActivity extends AppCompatActivity {
             spinner.setAdapter(adapter);
 
             //Hides ProgressBar
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.INVISIBLE);
-        }
-        catch(Exception exc){
-            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    //Requests Stock Items from the Firebase Database
-    public void requestStockItems(){
-        try{
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(this).getUserKey();
-            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_FETCH_STOCK);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            startService(intent);
+            toggleProgressBarVisibility(View.INVISIBLE);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -306,7 +252,7 @@ public class DeliveryActivity extends AppCompatActivity {
                 public void onChanged() {
                     super.onChanged();
                     firebaseAction = "stock";
-                    requestStockItems();
+                    new Stock().requestStockItems(null, getApplicationContext(), new DataReceiver(new Handler()));
                 }
             });
         }
@@ -338,11 +284,10 @@ public class DeliveryActivity extends AppCompatActivity {
     public void addDeliveryOnClick(View view){
         try {
             //Displays ProgressBar
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.VISIBLE);
+            toggleProgressBarVisibility(View.VISIBLE);
 
             firebaseAction = "";
-            requestStockItems();
+            new Stock().requestStockItems(null, this, new DataReceiver(new Handler()));
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_SHORT).show();
@@ -480,7 +425,11 @@ public class DeliveryActivity extends AppCompatActivity {
                 //Writes the Delivery details to the database if the information is valid
                 if(delivery.validateDelivery(this)){
                     if(action.equals("update") || (action.equals("add") && delivery.checkDeliveryDate(getApplicationContext()))){
-                        requestWriteOfDelivery(delivery, action);
+                        //Displays ProgressBar
+                        toggleProgressBarVisibility(View.VISIBLE);
+
+                        //Attempts to write Delivery details to the Firebase Database
+                        delivery.requestWriteOfDelivery(this, action, new DataReceiver(new Handler()));
                         newDelivery = delivery;
                         updateStockLevels(lstUpdatedStockItems);
                     }
@@ -500,28 +449,6 @@ public class DeliveryActivity extends AppCompatActivity {
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    //Method calls the FirebaseService class and passes in a Delivery object that must be written to the Firebase database
-    public void requestWriteOfDelivery(Delivery delivery, String action){
-        try{
-            //Displays ProgressBar
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.VISIBLE);
-
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(this).getUserKey();
-            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_WRITE_DELIVERY);
-            intent.putExtra(FirebaseService.ACTION_WRITE_DELIVERY, delivery);
-            intent.putExtra(FirebaseService.ACTION_WRITE_DELIVERY_INFORMATION, action);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            startService(intent);
-        }
-        catch(Exception exc){
-            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -621,7 +548,38 @@ public class DeliveryActivity extends AppCompatActivity {
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
 
+    //Method sends an SMS to the Client when a Delivery is scheduled/updated
+    public void sendSMS(Delivery delivery){
+        try{
+            SmsManager smsManager = SmsManager.getDefault();
+            //smsManager.sendTextMessage();
+            //TODO
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    public void toggleProgressBarVisibility(int visibility){
+        try{
+            //Toggles ProgressBar visibility
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
+            progressBar.setVisibility(visibility);
+
+            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
+            if(visibility == View.VISIBLE){
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+            else{
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     //Creates a ResultReceiver to retrieve information from the FirebaseService
@@ -641,7 +599,7 @@ public class DeliveryActivity extends AppCompatActivity {
                         displaySpinnerDeliveryItems(lstStock);
                     }
                     else{
-                        requestDeliveries(null);
+                        new Delivery().requestDeliveries(null, getApplicationContext(), new DataReceiver(new Handler()), 0);
                     }
                 }
                 else{
@@ -684,16 +642,14 @@ public class DeliveryActivity extends AppCompatActivity {
                 }
 
                 //Hides ProgressBar
-                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-                progressBar.setVisibility(View.INVISIBLE);
+                toggleProgressBarVisibility(View.INVISIBLE);
             }
             else if(resultCode == FirebaseService.ACTION_FETCH_DELIVERIES_RESULT_CODE){
                 ArrayList<Delivery> lstDeliveries = (ArrayList<Delivery>) resultData.getSerializable(FirebaseService.ACTION_FETCH_DELIVERIES);
                 saveDeliveryDetails(lstStock, lstDeliveries);
 
                 //Hides ProgressBar
-                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-                progressBar.setVisibility(View.INVISIBLE);
+                toggleProgressBarVisibility(View.INVISIBLE);
             }
         }
     }

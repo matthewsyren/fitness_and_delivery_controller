@@ -19,6 +19,7 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
@@ -64,7 +65,12 @@ public class DeliveryControlActivity extends BaseActivity {
 
                 }
             });
-            requestDeliveries(null);
+
+            //Displays ProgressBar
+            toggleProgressBarVisibility(View.VISIBLE);
+
+            //Fetches Deliveries from the Firebase Database
+            new Delivery().requestDeliveries(null, this, new DataReceiver(new Handler()), 0);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -76,7 +82,11 @@ public class DeliveryControlActivity extends BaseActivity {
     public void onResume(){
         try{
             super.onResume();
-            requestDeliveries(null);
+            //Displays ProgressBar
+            toggleProgressBarVisibility(View.VISIBLE);
+
+            //Fetches Deliveries from the Firebase Database
+            new Delivery().requestDeliveries(null, this, new DataReceiver(new Handler()), 0);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -88,32 +98,15 @@ public class DeliveryControlActivity extends BaseActivity {
         try{
             //Fetches the search term and requests Deliveries that match the search term
             String searchTerm = txtSearchDelivery.getText().toString();
-            requestDeliveries(searchTerm);
+
+            //Displays ProgressBar
+            toggleProgressBarVisibility(View.VISIBLE);
+
+            //Fetches Deliveries from the Firebase Database
+            new Delivery().requestDeliveries(searchTerm, this, new DataReceiver(new Handler()), 0);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(),Toast.LENGTH_LONG).show();
-        }
-    }
-
-    //Method calls the FirebaseService class and requests the Clients from the Firebase Database
-    public void requestDeliveries(String searchTerm){
-        try{
-            //Displays ProgressBar
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-            progressBar.setVisibility(View.VISIBLE);
-
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(this).getUserKey();
-            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_FETCH_DELIVERIES);
-            intent.putExtra(FirebaseService.DELIVERY_COMPLETE, 0);
-            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            startService(intent);
-        }
-        catch(Exception exc){
-            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -152,6 +145,26 @@ public class DeliveryControlActivity extends BaseActivity {
         }
     }
 
+    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    public void toggleProgressBarVisibility(int visibility){
+        try{
+            //Toggles ProgressBar visibility
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
+            progressBar.setVisibility(visibility);
+
+            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
+            if(visibility == View.VISIBLE){
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+            else{
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     //Creates a ResultReceiver to retrieve information from the FirebaseService
     private class DataReceiver extends ResultReceiver {
         private DataReceiver(Handler handler) {
@@ -173,8 +186,7 @@ public class DeliveryControlActivity extends BaseActivity {
                 displayDeliveries(lstDeliveries);
 
                 //Hides ProgressBar
-                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-                progressBar.setVisibility(View.INVISIBLE);
+                toggleProgressBarVisibility(View.INVISIBLE);
             }
         }
     }

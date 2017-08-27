@@ -31,6 +31,7 @@ public class ClientReportListViewAdapter extends ArrayAdapter{
     //Declarations
     private Context context;
     private ArrayList<Client> lstClients;
+    private int clientToBeDeletedPosition;
 
     //Constructor
     public ClientReportListViewAdapter(Context context, ArrayList<Client> lstClients) {
@@ -79,23 +80,10 @@ public class ClientReportListViewAdapter extends ArrayAdapter{
                     @Override
                     public void onClick(DialogInterface dialog, int button) {
                         switch(button){
-                            //Checks if the username is valid (length > 0 and every character is an alphabetic character)
+                            //Attempts to delete the Client if the user chooses the 'Yes' option in the AlertDialog
                             case AlertDialog.BUTTON_POSITIVE:
-                                /*DBAdapter dbAdapter = new DBAdapter(context);
-                                dbAdapter.open();
-                                String clientID = lstClients.get(position).getClientID();
-
-                                //Deletes Client and the Deliveries associated with that Client
-                                if(dbAdapter.deleteClient(clientID)){
-                                    dbAdapter.deleteClientDeliveries(clientID);
-                                    lstClients.remove(position);
-                                    Toast.makeText(context, "Client successfully deleted", Toast.LENGTH_LONG).show();
-                                    notifyDataSetChanged();
-                                }
-                                dbAdapter.close(); */
-                                requestWriteOfClient(lstClients.get(position), "delete");
-                                lstClients.remove(position);
-                                notifyDataSetChanged();
+                                clientToBeDeletedPosition = position;
+                                new Delivery().requestDeliveries(null, context, new DataReceiver(new Handler()), 0);
                                 break;
                             case AlertDialog.BUTTON_NEGATIVE:
                                 Toast.makeText(context, "Deletion cancelled", Toast.LENGTH_LONG).show();
@@ -115,24 +103,6 @@ public class ClientReportListViewAdapter extends ArrayAdapter{
         return convertView;
     }
 
-    //Method calls the FirebaseService class and passes in a Client object that must be written to the Firebase database
-    public void requestWriteOfClient(Client client, String action){
-        try{
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(context).getUserKey();
-            Intent intent = new Intent(context, FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_WRITE_CLIENT);
-            intent.putExtra(FirebaseService.ACTION_WRITE_CLIENT, client);
-            intent.putExtra(FirebaseService.ACTION_WRITE_CLIENT_INFORMATION, action);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            context.startService(intent);
-        }
-        catch(Exception exc){
-            Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
     //Creates a ResultReceiver to retrieve information from the FirebaseService
     private class DataReceiver extends ResultReceiver {
         private DataReceiver(Handler handler) {
@@ -146,6 +116,26 @@ public class ClientReportListViewAdapter extends ArrayAdapter{
 
                 if (success) {
                     Toast.makeText(context, "Client deleted successfully", Toast.LENGTH_LONG).show();
+
+                    lstClients.remove(clientToBeDeletedPosition);
+                    notifyDataSetChanged();
+                }
+            }
+            else if(resultCode == FirebaseService.ACTION_FETCH_DELIVERIES_RESULT_CODE){
+                ArrayList<Delivery> lstDeliveries = (ArrayList<Delivery>) resultData.getSerializable(FirebaseService.ACTION_FETCH_DELIVERIES);
+                boolean clientUsed = false;
+                for(Delivery delivery : lstDeliveries){
+                    if(delivery.getDeliveryClientID().equals(lstClients.get(clientToBeDeletedPosition).getClientID())){
+                        clientUsed = true;
+                        break;
+                    }
+                }
+
+                if(!clientUsed){
+                    lstClients.get(clientToBeDeletedPosition).requestWriteOfClient( "delete", context, new DataReceiver(new Handler()));
+                }
+                else{
+                    Toast.makeText(context, "There are Deliveries that are scheduled for this Client, please remove all Deliveries for this Client before deleting the Client.", Toast.LENGTH_LONG).show();
                 }
             }
         }

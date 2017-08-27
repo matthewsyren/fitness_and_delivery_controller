@@ -10,6 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -35,27 +36,35 @@ public class RouteHistoryActivity extends AppCompatActivity {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.activity_route_history);
 
+            //Displays ProgressBar
+            toggleProgressBarVisibility(View.VISIBLE);
+
             //Fetches run details from Firebase
-            requestRuns(new User(this).getUserKey());
+            new Run().requestRuns(this, new DataReceiver(new Handler()));
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
-    //Method fetches all the runs associated with the user's key, and adds them to an ArrayList. The data is then displayed in a ListView
-    public void requestRuns(final String userKey){
-        //Displays ProgressBar
-        ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-        progressBar.setVisibility(View.VISIBLE);
+    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    public void toggleProgressBarVisibility(int visibility){
+        try{
+            //Toggles ProgressBar visibility
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
+            progressBar.setVisibility(visibility);
 
-        //Requests location information from the LocationService class
-        String firebaseKey = new User(this).getUserKey();
-        Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
-        intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-        intent.setAction(FirebaseService.ACTION_FETCH_RUNS);
-        intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-        startService(intent);
+            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
+            if(visibility == View.VISIBLE){
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+            else{
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     //Creates a ResultReceiver to retrieve information from the FirebaseService
@@ -86,8 +95,7 @@ public class RouteHistoryActivity extends AppCompatActivity {
                 });
 
                 //Hides ProgressBar
-                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar) ;
-                progressBar.setVisibility(View.INVISIBLE);
+                toggleProgressBarVisibility(View.INVISIBLE);
             }
         }
     }

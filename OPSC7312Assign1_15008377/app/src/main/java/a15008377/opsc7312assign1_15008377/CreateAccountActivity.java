@@ -8,6 +8,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -29,7 +30,7 @@ public class CreateAccountActivity extends AppCompatActivity {
             setContentView(R.layout.activity_create_account);
 
             //Hides ProgressBar
-            toggleProgressBar(View.INVISIBLE);
+            toggleProgressBarVisibility(View.INVISIBLE);
 
             firebaseAuth = FirebaseAuth.getInstance();
         }
@@ -38,11 +39,20 @@ public class CreateAccountActivity extends AppCompatActivity {
         }
     }
 
-    //Method toggles the visibility of the ProgressBar
-    public void toggleProgressBar(int visibility){
+    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    public void toggleProgressBarVisibility(int visibility){
         try{
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar);
+            //Toggles ProgressBar visibility
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
             progressBar.setVisibility(visibility);
+
+            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
+            if(visibility == View.VISIBLE){
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+            else{
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -61,7 +71,7 @@ public class CreateAccountActivity extends AppCompatActivity {
             String confirmPassword = txtConfirmPassword.getText().toString();
 
             //Displays ProgressBar
-            toggleProgressBar(View.VISIBLE);
+            toggleProgressBarVisibility(View.VISIBLE);
 
             //Creates an account if the user's passwords match and they have entered valid data
             if(password.equals(confirmPassword)){
@@ -77,14 +87,14 @@ public class CreateAccountActivity extends AppCompatActivity {
                         }
                         else{
                             Toast.makeText(CreateAccountActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
-                            toggleProgressBar(View.INVISIBLE);
+                            toggleProgressBarVisibility(View.INVISIBLE);
                         }
                     }
                 });
             }
             else{
                 Toast.makeText(getApplicationContext(), "Please ensure that your passwords match", Toast.LENGTH_LONG).show();
-                toggleProgressBar(View.INVISIBLE);
+                toggleProgressBarVisibility(View.INVISIBLE);
             }
         }
         catch(Exception exc){

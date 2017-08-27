@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -12,6 +13,9 @@ import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,9 +28,14 @@ public class Question1A extends AppCompatActivity {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.activity_question1a);
 
+            //Displays ProgressBar
+            toggleProgressBarVisibility(View.VISIBLE);
+
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
                 ActivityCompat.requestPermissions(Question1A.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             }
+
+            //Fetches user's current location
             getLocation();
         }
         catch(Exception exc){
@@ -68,6 +77,26 @@ public class Question1A extends AppCompatActivity {
         }
     }
 
+    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    public void toggleProgressBarVisibility(int visibility){
+        try{
+            //Toggles ProgressBar visibility
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
+            progressBar.setVisibility(visibility);
+
+            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
+            if(visibility == View.VISIBLE){
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+            else{
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+            }
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     //Creates a ResultReceiver to retrieve information from the LocationService
     private class LocationReceiver extends ResultReceiver{
         private LocationReceiver(Handler handler) {
@@ -78,7 +107,11 @@ public class Question1A extends AppCompatActivity {
         protected void onReceiveResult(int resultCode, Bundle resultData){
             String result = resultData.getString(LocationService.RESULT_KEY);
             TextView textView = (TextView) findViewById(R.id.text_address);
-            textView.setText("Address: " + result);
+            Resources resources = getResources();
+            textView.setText(resources.getString(R.string.current_address, result));
+
+            //Hides ProgressBar
+            toggleProgressBarVisibility(View.INVISIBLE);
         }
     }
 }

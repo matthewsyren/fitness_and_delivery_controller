@@ -119,6 +119,24 @@ public class Client implements Serializable{
         }
     }
 
+    //Method calls the FirebaseService class and passes in a Client object that must be written to the Firebase database
+    public void requestWriteOfClient(String action, Context context, ResultReceiver resultReceiver){
+        try{
+            //Requests location information from the LocationService class
+            String firebaseKey = new User(context).getUserKey();
+            Intent intent = new Intent(context, FirebaseService.class);
+            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
+            intent.setAction(FirebaseService.ACTION_WRITE_CLIENT);
+            intent.putExtra(FirebaseService.ACTION_WRITE_CLIENT, this);
+            intent.putExtra(FirebaseService.ACTION_WRITE_CLIENT_INFORMATION, action);
+            intent.putExtra(FirebaseService.RECEIVER, resultReceiver);
+            context.startService(intent);
+        }
+        catch(Exception exc){
+            Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     //Method parses the JSOn from the response String passed into the method, and returns a JSONObject if the JSON is valid, otherwise it returns null
     public static JSONObject getAddressCoordinates(String response, Context context) throws JSONException{
         if(response != null){
