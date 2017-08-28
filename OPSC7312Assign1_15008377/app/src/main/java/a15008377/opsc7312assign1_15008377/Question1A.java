@@ -113,20 +113,12 @@ public class Question1A extends AppCompatActivity {
         }
     }
 
-    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    //Method toggles the ProgressBar's visibility
     public void toggleProgressBarVisibility(int visibility){
         try{
             //Toggles ProgressBar visibility
             ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
             progressBar.setVisibility(visibility);
-
-            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
-            if(visibility == View.VISIBLE){
-                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-            }
-            else{
-                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();

@@ -48,20 +48,12 @@ public class CreateAccountActivity extends AppCompatActivity {
         }
     }
 
-    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    //Method toggles the ProgressBar's visibility
     public void toggleProgressBarVisibility(int visibility){
         try{
             //Toggles ProgressBar visibility
             ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
             progressBar.setVisibility(visibility);
-
-            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
-            if(visibility == View.VISIBLE){
-                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-            }
-            else{
-                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -90,13 +82,29 @@ public class CreateAccountActivity extends AppCompatActivity {
                 firebaseAuth.createUserWithEmailAndPassword(user.getUserEmailAddress(), user.getUserPassword()).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
-                        if(task.isSuccessful()){
+                        if (!task.isSuccessful()) {
+                            String exception = task.getException().getMessage();
+                            if(exception.contains("WEAK_PASSWORD")){
+                                //Displays message telling the user to choose a stronger password
+                                Toast.makeText(getApplicationContext(), "The password you have entered is too weak, please enter a password with at least 6 characters", Toast.LENGTH_LONG).show();
+                            }
+                            else if(exception.contains("The email address is already in use by another account.")){
+                                //Displays a message telling the user to choose another email address, as their desired email has already been used
+                                Toast.makeText(getApplicationContext(), "The email address you have entered has already been used for this app, please enter another email address", Toast.LENGTH_LONG).show();
+                            }
+                            else if(exception.contains("The email address is badly formatted.")){
+                                //Displays a message telling the user to enter a valid email address
+                                Toast.makeText(getApplicationContext(), "The email address you have entered is invalid, please enter a valid email address e.g. yourname@example.com", Toast.LENGTH_LONG).show();
+                            }
+                            else{
+                                Toast.makeText(CreateAccountActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                            }
+                            //Hides ProgressBar
+                            toggleProgressBarVisibility(View.INVISIBLE);
+                        }
+                        else if(task.isSuccessful()){
                             //Registers the user in the Firebase authentication for this app
                             pushUser(user.getUserEmailAddress());
-                        }
-                        else{
-                            Toast.makeText(CreateAccountActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
-                            toggleProgressBarVisibility(View.INVISIBLE);
                         }
                     }
                 });

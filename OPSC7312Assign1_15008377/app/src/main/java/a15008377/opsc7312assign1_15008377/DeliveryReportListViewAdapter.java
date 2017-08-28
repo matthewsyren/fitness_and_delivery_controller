@@ -226,11 +226,11 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
             //Checks for permission to write to calendar, and deletes the Calendar event if permission has been granted
             if(ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_CALENDAR) == PackageManager.PERMISSION_GRANTED) {
                 ContentResolver contentResolver = context.getContentResolver();
-                Cursor eventCursor = contentResolver.query(Uri.parse("content://com.android.calendar/events"), new String[] { "_id", "title"}, CalendarContract.Instances.CALENDAR_ID + " = ?", new String[] {"1"}, null);
+                Cursor cursor = contentResolver.query(Uri.parse("content://com.android.calendar/events"), new String[] { "_id", "title"}, CalendarContract.Instances.CALENDAR_ID + " = ?", new String[] {"1"}, null);
 
-                while (eventCursor.moveToNext()){
-                    final long id = eventCursor.getLong(0);
-                    final String title = eventCursor.getString(1);
+                while (cursor.moveToNext()){
+                    final long id = cursor.getLong(0);
+                    final String title = cursor.getString(1);
                     if(title.equals("Delivery " + lstDeliveries.get(deliveryToBeDeletedPosition).getDeliveryID())){
                         //Deletes the Delivery from the Calendar
                         Uri eventsUri = Uri.parse("content://com.android.calendar/events");
@@ -238,6 +238,9 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
                         context.getContentResolver().delete(eventUri, null, null);
                     }
                 }
+
+                //Closes Cursor
+                cursor.close();
             }
         }
         catch(Exception exc){

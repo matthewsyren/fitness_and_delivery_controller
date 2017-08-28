@@ -44,7 +44,7 @@
     </style>
 
     <style name="PrimaryButtonStyle">
-        <item name="android:background">@color/colorPrimary</item>
+        <item name="android:background">@drawable/button_rounded_primary</item>
         <item name="android:padding">@dimen/button_padding</item>
 
         <item name="android:textColor">@color/white</item>

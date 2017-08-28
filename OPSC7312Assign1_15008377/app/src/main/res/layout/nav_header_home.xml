@@ -29,7 +29,4 @@
         android:layout_gravity="center_horizontal"
         android:visibility="visible"
         android:layout_weight="0.5"/>
-
-
-
 </LinearLayout>

@@ -207,6 +207,18 @@ public class DeliveryActivity extends AppCompatActivity {
             Spinner spinner = (Spinner) findViewById(R.id.spinner_delivery_client);
             spinner.setAdapter(adapter);
 
+            //Sets the selected index if the Delivery is being updated to the current Client for the Delivery
+            if(action.equals("update")){
+                Bundle bundle = getIntent().getExtras();
+                Delivery delivery = (Delivery) bundle.getSerializable("deliveryObject");
+                for(int i = 0; i < lstClients.size(); i++){
+                    if(lstClients.get(i).getClientID().equals(delivery.getDeliveryClientID())){
+                        spinner.setSelection(i);
+                        break;
+                    }
+                }
+            }
+
             //Hides ProgressBar
             toggleProgressBarVisibility(View.INVISIBLE);
         }
@@ -555,12 +567,12 @@ public class DeliveryActivity extends AppCompatActivity {
                 ContentResolver contentResolver = getContentResolver();
 
                 //Fetches all events from the default Calendar
-                Cursor eventCursor = contentResolver.query(Uri.parse("content://com.android.calendar/events"), new String[] { "_id", "title"}, CalendarContract.Instances.CALENDAR_ID + " = ?", new String[] {"1"}, null);
+                Cursor cursor = contentResolver.query(Uri.parse("content://com.android.calendar/events"), new String[] { "_id", "title"}, CalendarContract.Instances.CALENDAR_ID + " = ?", new String[] {"1"}, null);
 
                 //Loops through the Calendar events until the event that is to be updated is found
-                while (eventCursor.moveToNext()){
-                    final long id = eventCursor.getLong(0);
-                    final String title = eventCursor.getString(1);
+                while (cursor.moveToNext()){
+                    final long id = cursor.getLong(0);
+                    final String title = cursor.getString(1);
 
                     //Compares Calendar event title to the title of the event that needs to be updated, and updates the event if they match
                     if(title.equals("Delivery " + newDelivery.getDeliveryID())){
@@ -580,6 +592,9 @@ public class DeliveryActivity extends AppCompatActivity {
                         getContentResolver().update(eventUri, values, null, null);
                     }
                 }
+
+                //Closes Cursor
+                cursor.close();
             }
         }
         catch(Exception exc){
@@ -622,20 +637,12 @@ public class DeliveryActivity extends AppCompatActivity {
         }
     }
 
-    //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
+    //Method toggles the ProgressBar's visibility
     public void toggleProgressBarVisibility(int visibility){
         try{
             //Toggles ProgressBar visibility
             ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
             progressBar.setVisibility(visibility);
-
-            //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
-            if(visibility == View.VISIBLE){
-                getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-            }
-            else{
-                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();

@@ -28,6 +28,8 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -110,6 +112,18 @@ public class Question1B extends AppCompatActivity implements OnMapReadyCallback 
         try{
             Intent intent = new Intent(Question1B.this, StartActivity.class);
             startActivity(intent);
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Method toggles the ProgressBar's visibility
+    public void toggleProgressBarVisibility(int visibility){
+        try{
+            //Toggles ProgressBar visibility
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
+            progressBar.setVisibility(visibility);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -256,8 +270,10 @@ public class Question1B extends AppCompatActivity implements OnMapReadyCallback 
     //Method draws a polyline between the points that the user has visited while the app has been open
     public void drawPolyline(LatLng position){
         try{
+            //Clears polyline if position is null, otherwise draws the next polyline
             if(position == null){
                 mMap.clear();
+                polylineOptions = new PolylineOptions();
             }
             else{
                 polylineOptions.add(position);
@@ -316,6 +332,7 @@ public class Question1B extends AppCompatActivity implements OnMapReadyCallback 
                         case AlertDialog.BUTTON_POSITIVE:
                             //Saves the user's Run details
                             saveUserDetails();
+                            toggleProgressBarVisibility(View.VISIBLE);
                             break;
                         case AlertDialog.BUTTON_NEGATIVE:
                             Toast.makeText(getApplicationContext(), "Route information not saved", Toast.LENGTH_LONG).show();
@@ -371,8 +388,14 @@ public class Question1B extends AppCompatActivity implements OnMapReadyCallback 
     //Method opens the RouteHistoryActivity
     public void viewHistoryOnClick(View view){
         try{
-            Intent intent = new Intent(Question1B.this, RouteHistoryActivity.class);
-            startActivity(intent);
+            //Stops location tracking before calling new Activity
+            if(locationListener == null){
+                Intent intent = new Intent(Question1B.this, RouteHistoryActivity.class);
+                startActivity(intent);
+            }
+            else{
+                Toast.makeText(getApplicationContext(), "Please stop tracking your current Run before viewing your history", Toast.LENGTH_LONG).show();
+            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -425,6 +448,7 @@ public class Question1B extends AppCompatActivity implements OnMapReadyCallback 
             databaseReference.child(key).setValue(run);
             Toast.makeText(getApplicationContext(), "Run information saved", Toast.LENGTH_LONG).show();
             drawPolyline(null);
+            toggleProgressBarVisibility(View.INVISIBLE);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
