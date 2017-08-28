@@ -1,3 +1,11 @@
+/*
+ * Author: Matthew Syrén
+ *
+ * Date:   29 August 2017
+ *
+ * Description: Class displays the optimised Route details for a day's Deliveries
+ */
+
 package a15008377.opsc7312assign1_15008377;
 
 import android.app.Activity;
@@ -17,18 +25,14 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import java.util.ArrayList;
-
-/**
- * Created by Matthew Syrén on 2017/08/24.
- */
 
 public class RouteListViewAdapter extends ArrayAdapter{
     //Declarations
     private Context context;
     private ArrayList<WayPoint> lstWayPoints;
     private ArrayList<Delivery> lstDeliveries;
+    private int completedDeliveryPosition;
 
     //Constructor
     public RouteListViewAdapter(Context context, ArrayList<WayPoint> lstWayPoints, ArrayList<Delivery> lstDeliveries) {
@@ -44,6 +48,7 @@ public class RouteListViewAdapter extends ArrayAdapter{
         //Sets the LayoutInflater for the ListView
         LayoutInflater inflater = ((Activity)context).getLayoutInflater();
 
+        //Hides the first and last rows, as those are the user's starting location
         if(position > 0 && position < lstWayPoints.size() - 1) {
             //View declarations
             TextView txtDeliveryID;
@@ -58,7 +63,7 @@ public class RouteListViewAdapter extends ArrayAdapter{
             //Inflates the list_row view for the ListView
             convertView = inflater.inflate(R.layout.list_view_row_route_planner, parent, false);
 
-            //Component assignments
+            //View assignments
             txtDeliveryID = (TextView) convertView.findViewById(R.id.text_delivery_id);
             txtClientID = (TextView) convertView.findViewById(R.id.text_client_id);
             txtClientPhoneNumber = (TextView) convertView.findViewById(R.id.text_client_phone_number);
@@ -84,26 +89,27 @@ public class RouteListViewAdapter extends ArrayAdapter{
                     try{
                         String action = "update";
                         Delivery completedDelivery = null;
+
+                        //Loops through the Deliveries until the one that has been completed is found
                         for(Delivery delivery : lstDeliveries){
                             if(delivery.getDeliveryID().equals(lstWayPoints.get(position).getDeliveryID())){
                                 completedDelivery = delivery;
                                 break;
                             }
                         }
+
+                        //Sets the Delivery to complete and updates the Firebase Database
+                        completedDeliveryPosition = position;
                         completedDelivery.setDeliveryComplete(1);
                         completedDelivery.requestWriteOfDelivery(context, action, new DataReceiver(new Handler()));
-
-                        lstWayPoints.remove(position);
-                        for(WayPoint wayPoint : lstWayPoints){
-                            Log.v("WAYPOINTS", wayPoint.getDeliveryID());
-                        }
-                        notifyDataSetChanged();
                     }
                     catch(Exception exc){
                         Toast.makeText(context, exc.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 }
             });
+
+            //Opens the phone dialer pre-populated with the Client's phone number
             btnPhoneClient.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -119,7 +125,7 @@ public class RouteListViewAdapter extends ArrayAdapter{
             });
         }
         else{
-            //Inflates an empty row (as the start and end of the route shouldn't be displayed in the ListView
+            //Inflates an empty row (as the start and end of the route shouldn't be displayed in the ListView)
             convertView = inflater.inflate(R.layout.list_view_row_empty, parent, false);
         }
 
@@ -134,10 +140,14 @@ public class RouteListViewAdapter extends ArrayAdapter{
 
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
+            //Processes the result when the Delivery has been written to the Firebase Database
             if(resultCode == FirebaseService.ACTION_WRITE_DELIVERY_RESULT_CODE){
                 boolean success = resultData.getBoolean(FirebaseService.ACTION_WRITE_DELIVERY);
 
                 if(success){
+                    //Removes the Delivery from the ListView
+                    lstWayPoints.remove(completedDeliveryPosition);
+                    notifyDataSetChanged();
                     Toast.makeText(context, "Delivery marked as complete", Toast.LENGTH_LONG).show();
                 }
             }

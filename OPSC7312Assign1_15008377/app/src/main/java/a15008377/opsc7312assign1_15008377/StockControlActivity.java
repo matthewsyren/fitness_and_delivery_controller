@@ -1,38 +1,26 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
- * Description: Class displays a report of all Stock items in the Stock.txt text file
+ * Description: Class displays a report of all Stock items from the Firebase Database
  */
 
 package a15008377.opsc7312assign1_15008377;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
-
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class StockControlActivity extends BaseActivity {
@@ -102,7 +90,7 @@ public class StockControlActivity extends BaseActivity {
             //Displays ProgressBar
             toggleProgressBarVisibility(View.VISIBLE);
 
-            //Fetches the Stock Items from the Firebase Database
+            //Fetches the Stock Items from the Firebase Database that match the search term
             new Stock().requestStockItems(searchTerm, this, new DataReceiver(new Handler()));
         }
         catch(Exception exc){
@@ -173,6 +161,7 @@ public class StockControlActivity extends BaseActivity {
 
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
+            //Processes the result when the Stock is fetched from the Firebase Database
             if(resultCode == FirebaseService.ACTION_FETCH_STOCK_RESULT_CODE){
                 ArrayList<Stock> lstStock = (ArrayList<Stock>) resultData.getSerializable(FirebaseService.ACTION_FETCH_STOCK);
 
@@ -183,6 +172,7 @@ public class StockControlActivity extends BaseActivity {
                 else{
                     Toast.makeText(getApplicationContext(), "Stock fetched", Toast.LENGTH_LONG).show();
                 }
+                //Displays the Stock items in the ListView
                 displayStock(lstStock);
 
                 //Hides ProgressBar

@@ -1,38 +1,26 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
  * Description: Class displays a report of all incomplete Deliveries
  */
 
 package a15008377.opsc7312assign1_15008377;
 
-import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
-
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-
 import java.util.ArrayList;
 
 public class DeliveryControlActivity extends BaseActivity {
@@ -82,10 +70,11 @@ public class DeliveryControlActivity extends BaseActivity {
     public void onResume(){
         try{
             super.onResume();
+
             //Displays ProgressBar
             toggleProgressBarVisibility(View.VISIBLE);
 
-            //Fetches Deliveries from the Firebase Database
+            //Fetches incomplete Deliveries from the Firebase Database
             new Delivery().requestDeliveries(null, this, new DataReceiver(new Handler()), 0);
         }
         catch(Exception exc){
@@ -102,7 +91,7 @@ public class DeliveryControlActivity extends BaseActivity {
             //Displays ProgressBar
             toggleProgressBarVisibility(View.VISIBLE);
 
-            //Fetches Deliveries from the Firebase Database
+            //Fetches incomplete Deliveries from the Firebase Database
             new Delivery().requestDeliveries(searchTerm, this, new DataReceiver(new Handler()), 0);
         }
         catch(Exception exc){
@@ -110,7 +99,7 @@ public class DeliveryControlActivity extends BaseActivity {
         }
     }
 
-    //Method populates the ListView on this Activity
+    //Method populates the ListView on this Activity with the incomplete Deliveries
     public void displayDeliveries(final ArrayList<Delivery> lstDeliveries){
         try{
             //Sets the Adapter for the list_view_deliveries ListView
@@ -173,16 +162,19 @@ public class DeliveryControlActivity extends BaseActivity {
 
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
+            //Processes the result when the Deliveries have been fetched from the Firebase Database
             if(resultCode == FirebaseService.ACTION_FETCH_DELIVERIES_RESULT_CODE){
                 ArrayList<Delivery> lstDeliveries = (ArrayList<Delivery>) resultData.getSerializable(FirebaseService.ACTION_FETCH_DELIVERIES);
 
-                //Displays error message if there are no Delivery items to display
+                //Displays an error message if there are no Delivery items to display
                 if(lstDeliveries.size() == 0){
                     Toast.makeText(getApplicationContext(), "There are currently no Deliveries added", Toast.LENGTH_LONG).show();
                 }
                 else{
                     Toast.makeText(getApplicationContext(), "Deliveries fetched", Toast.LENGTH_LONG).show();
                 }
+
+                //Displays Deliveries
                 displayDeliveries(lstDeliveries);
 
                 //Hides ProgressBar

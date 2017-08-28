@@ -4,27 +4,31 @@
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/nav_home"
-            android:icon="@drawable/ic_home"
+            android:icon="@drawable/ic_home_black_24dp"
             android:title="@string/navigation_drawer_home" />
         <item
             android:id="@+id/nav_stock_control"
-            android:icon="@drawable/ic_stock_control"
+            android:icon="@drawable/ic_shopping_cart_black_24dp"
             android:title="@string/navigation_drawer_stock_control" />
         <item
             android:id="@+id/nav_client_control"
-            android:icon="@drawable/ic_client_control"
+            android:icon="@drawable/ic_person_pin_black_24dp"
             android:title="@string/navigation_drawer_client_control" />
         <item
             android:id="@+id/nav_delivery_control"
-            android:icon="@drawable/ic_delivery_control"
+            android:icon="@drawable/ic_directions_car_black_24dp"
             android:title="@string/navigation_drawer_delivery_control" />
         <item
             android:id="@+id/nav_completed_deliveries"
-            android:icon="@drawable/ic_completed_deliveries"
+            android:icon="@drawable/ic_done_black_24dp"
             android:title="@string/navigation_drawer_completed_deliveries" />
         <item
             android:id="@+id/nav_help"
-            android:icon="@drawable/ic_help"
+            android:icon="@drawable/ic_help_black_24dp"
             android:title="@string/navigation_drawer_help" />
+        <item
+            android:id="@+id/nav_back_to_start"
+            android:icon="@drawable/ic_arrow_back_black_24dp"
+            android:title="@string/navigation_drawer_back_to_start" />
     </group>
 </menu>

@@ -1,39 +1,26 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
  * Description: Class shows a report of the Clients that are stored in the database
  */
 
 package a15008377.opsc7312assign1_15008377;
 
-import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
-import android.view.View.OnKeyListener;
-
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-
 import java.util.ArrayList;
 
 public class ClientControlActivity extends BaseActivity{
@@ -66,10 +53,11 @@ public class ClientControlActivity extends BaseActivity{
 
                 }
             });
-            //Displays ProgresBar
+
+            //Displays ProgressBar
             toggleProgressBarVisibility(View.VISIBLE);
 
-            //Populates the views that need to be displayed on the Activity
+            //Requests the Clients from the Firebase Database
             new Client().requestClients(null, this, new DataReceiver(new Handler()));
         }
         catch(Exception exc){
@@ -82,10 +70,11 @@ public class ClientControlActivity extends BaseActivity{
     public void onResume(){
         try{
             super.onResume();
-            //Displays ProgresBar
+
+            //Displays ProgressBar
             toggleProgressBarVisibility(View.VISIBLE);
 
-            //Populates the views that need to be displayed on the Activity
+            //Requests the Clients from the Firebase Database
             new Client().requestClients(null, this, new DataReceiver(new Handler()));
         }
         catch(Exception exc){
@@ -105,7 +94,7 @@ public class ClientControlActivity extends BaseActivity{
         }
     }
 
-    //Method populates the ListView with the client data stored in the database
+    //Method populates the ListView with the Client data stored in the Firebase Database
     public void displayClients(final ArrayList<Client> lstClients){
         try{
             if(lstClients.size() > 0){
@@ -114,7 +103,7 @@ public class ClientControlActivity extends BaseActivity{
                 ListView listView = (ListView) findViewById(R.id.list_view_clients);
                 listView.setAdapter(adapter);
 
-                //Sets an OnItemClickListener on the ListView, which will take the user to the ClientActivity, where the user will be able to update information about the Clients
+                //Sets an OnItemClickListener on the ListView, which will take the user to the ClientActivity, where the user will be able to update information about the Client that was clicked on
                 listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                     public void onItemClick(AdapterView<?> list, View v, int pos, long id) {
                         Intent intent = new Intent(ClientControlActivity.this, ClientActivity.class);
@@ -173,11 +162,12 @@ public class ClientControlActivity extends BaseActivity{
 
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
+            //Processes the result once the Clients have been fetched from the Firebase Database
             if(resultCode == FirebaseService.ACTION_FETCH_CLIENTS_RESULT_CODE){
                 ArrayList<Client> lstClients = (ArrayList<Client>) resultData.getSerializable(FirebaseService.ACTION_FETCH_CLIENTS);
 
                 //Displays error message if there are no Clients to display
-                if(lstClients.size() == 0){
+                if(lstClients != null && lstClients.size() == 0){
                     Toast.makeText(getApplicationContext(), "There are currently no Clients added", Toast.LENGTH_LONG).show();
                 }
                 else{

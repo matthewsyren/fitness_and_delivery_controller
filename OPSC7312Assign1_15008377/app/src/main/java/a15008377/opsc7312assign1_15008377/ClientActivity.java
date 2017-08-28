@@ -1,7 +1,7 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
  * Description: Class is used to add and update Client information
  */
@@ -48,37 +48,44 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
         }
     }
 
+    //Method opens a contact picker, which lets the user select a contact when registering a Client (Learnt from https://developer.android.com/training/basics/intents/result.html)
     public void chooseContactOnClick(View view){
         try{
-            Intent pickContactIntent = new Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"));
-            pickContactIntent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE); // Show user only contacts w/ phone numbers
-            startActivityForResult(pickContactIntent, 1);
+            Intent intent = new Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"));
+            intent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);
+            startActivityForResult(intent, 1);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
-    //Learnt from https://developer.android.com/training/basics/intents/result.html
-    //Method fetches the contact number that the user chose from the contact picker, and writes the chosen contact number to the EditText that accepts contact numbers
+    //Method fetches the contact number that the user chose from the contact picker, and writes the chosen contact number to the EditText that accepts contact numbers (Learnt from https://developer.android.com/training/basics/intents/result.html)
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == 1) {
-            if (resultCode == RESULT_OK) {
-                //Fetches the data returned from the contact picker
-                Uri contactUri = data.getData();
-                String[] projection = {ContactsContract.CommonDataKinds.Phone.NUMBER};
-                Cursor cursor = getContentResolver().query(contactUri, projection, null, null, null);
-                if(cursor.moveToFirst()){
-                    int column = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-                    String number = cursor.getString(column);
-                    cursor.close();
+        try{
+            if (requestCode == 1) {
+                if (resultCode == RESULT_OK) {
+                    //Fetches the data returned from the contact picker
+                    Uri uri = data.getData();
+                    String[] columns = {ContactsContract.CommonDataKinds.Phone.NUMBER};
+                    Cursor cursor = getContentResolver().query(uri, columns, null, null, null);
+                    if(cursor != null && cursor.moveToFirst()){
+                        int column = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+                        String phoneNumber = cursor.getString(column);
 
-                    //Sets the text of the EditText for the Client's phone number to the number returned from the contact picker
-                    EditText txtClientPhoneNumber = (EditText) findViewById(R.id.text_client_phone_number);
-                    txtClientPhoneNumber.setText(number);
+                        //Sets the text of the EditText for the Client's phone number to the number returned from the contact picker
+                        EditText txtClientPhoneNumber = (EditText) findViewById(R.id.text_client_phone_number);
+                        txtClientPhoneNumber.setText(phoneNumber);
+
+                        //Closes Cursor
+                        cursor.close();
+                    }
                 }
             }
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -132,7 +139,7 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
         }
     }
 
-    //Method pre-populates the TextViews on this Activity with the data from the Client item that was clicked on in the previous Activity and sent through the bundle
+    //Method pre-populates the TextViews on this Activity with the data from the Client item that was clicked on in the previous Activity and sent through the bundle (for updates only)
     public void displayData(Client client){
         try{
             //View assignments
@@ -152,7 +159,7 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
         }
     }
 
-    //Method adds/updates the Client details to the database
+    //Method creates a Client object and requests the co-ordinates of the Client's address from the Google Maps API
     public void addClientOnClick(View view) {
         try{
             //View assignments
@@ -186,7 +193,7 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
         }
     }
 
-    //Method reads the data returned from the Google Maps API (the coordinates if the address entered by the user) and determines whether the user has entered a valid address
+    //Method reads the data returned from the Google Maps API (the coordinates of the address entered by the user) and determines whether the user has entered a valid address
     @Override
     public void getJsonResponse(String response) {
         try{
@@ -201,6 +208,7 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
                 //Displays ProgressBar
                 toggleProgressBarVisibility(View.VISIBLE);
 
+                //Writes the Client to the Firebase Database
                 client.requestWriteOfClient(action, this, new DataReceiver(new Handler()));
             }
             else {
@@ -209,7 +217,6 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
             }
         }
         catch(Exception exc){
-            exc.printStackTrace();
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
@@ -261,29 +268,33 @@ public class ClientActivity extends AppCompatActivity implements IAPIConnectionR
 
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
-            boolean success = resultData.getBoolean(FirebaseService.ACTION_WRITE_CLIENT);
+            //Processes the result once the Client has been written to the Firebase Database
+            if(resultCode == FirebaseService.ACTION_WRITE_CLIENT_RESULT_CODE){
+                boolean success = resultData.getBoolean(FirebaseService.ACTION_WRITE_CLIENT);
 
-            if(success){
-                Intent intent;
-                if(action.equals("add")){
-                    Toast.makeText(getApplicationContext(), "Client successfully added", Toast.LENGTH_LONG).show();
-                    intent = getIntent();
-                    finish();
+                //Performs an action based on whether the Client was written to the Firebase Database successfully
+                if(success){
+                    Intent intent;
+                    if(action.equals("add")){
+                        Toast.makeText(getApplicationContext(), "Client successfully added", Toast.LENGTH_LONG).show();
+                        intent = getIntent();
+                        finish();
+                    }
+                    else{
+                        Toast.makeText(getApplicationContext(), "Client successfully updated", Toast.LENGTH_LONG).show();
+
+                        //Takes the user back to the ClientControlActivity once the update is complete
+                        intent = new Intent(ClientActivity.this, ClientControlActivity.class);
+                    }
+                    startActivity(intent);
                 }
                 else{
-                    Toast.makeText(getApplicationContext(), "Client successfully updated", Toast.LENGTH_LONG).show();
-
-                    //Takes the user back to the ClientControlActivity once the update is complete
-                    intent = new Intent(ClientActivity.this, ClientControlActivity.class);
+                    Toast.makeText(getApplicationContext(), "The Client ID has already been used, please choose another Client ID", Toast.LENGTH_LONG).show();
                 }
-                startActivity(intent);
-            }
-            else{
-                Toast.makeText(getApplicationContext(), "The Client ID has already been used, please choose another Client ID", Toast.LENGTH_LONG).show();
-            }
 
-            //Hides ProgressBar
-            toggleProgressBarVisibility(View.INVISIBLE);
+                //Hides ProgressBar
+                toggleProgressBarVisibility(View.INVISIBLE);
+            }
         }
     }
 }

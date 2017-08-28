@@ -1,3 +1,11 @@
+/*
+ * Author: Matthew Syrén
+ *
+ * Date:   29 August 2017
+ *
+ * Description: Class used to allow the user to login to their account
+ */
+
 package a15008377.opsc7312assign1_15008377;
 
 import android.content.Context;
@@ -12,7 +20,6 @@ import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
-
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
@@ -68,12 +75,14 @@ public class LoginActivity extends AppCompatActivity {
     public void onBackPressed() {
     }
 
-    //Method checks the information that the user has entered, and logs the user in if the information matches information in the Firebase authentication database
+    //Method checks the information that the user has entered, and logs the user in if the information matches information in the Firebase Authentication Database
     public void loginOnClick(View view){
         try{
+            //View assignments
             EditText txtEmail = (EditText) findViewById(R.id.text_login_email);
             EditText txtPassword = (EditText) findViewById(R.id.text_login_password);
 
+            //Fetching input
             String email = txtEmail.getText().toString();
             String password = txtPassword.getText().toString();
             final User user = new User(email, password);
@@ -86,13 +95,11 @@ public class LoginActivity extends AppCompatActivity {
             firebaseAuth.signInWithEmailAndPassword(user.getUserEmailAddress(), user.getUserPassword()).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                 @Override
                 public void onComplete(@NonNull Task<AuthResult> task) {
-                    Log.d("TAG", "signInWithEmail:onComplete:" + task.isSuccessful());
                     if(task.isSuccessful()){
                         //Fetches the user's key from Firebase and then calls the writeToSharedPreferences method once the key is fetched
                         user.setUserKey(loginActivity);
                     }
                     else{
-                        Log.w("TAG", "signInWithEmail", task.getException());
                         Toast.makeText(LoginActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
                         toggleProgressBarVisibility(View.INVISIBLE);
                     }
@@ -114,7 +121,7 @@ public class LoginActivity extends AppCompatActivity {
             editor.putString("userKey", key);
             editor.apply();
 
-            //Takes the user to the HomeActivity
+            //Takes the user to the StartActivity
             Intent intent = new Intent(LoginActivity.this, StartActivity.class);
             startActivity(intent);
         }

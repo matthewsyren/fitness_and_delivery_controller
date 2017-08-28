@@ -1,7 +1,7 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
  * Description: Class displays Delivery object information in the appropriate ListView
  */
@@ -10,32 +10,33 @@ package a15008377.opsc7312assign1_15008377;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.CalendarContract;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.os.ResultReceiver;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-
-import java.io.IOException;
 import java.util.ArrayList;
 
 @SuppressWarnings("WeakerAccess")
@@ -46,7 +47,8 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
     private String action;
     private int deliveryToBeDeletedPosition;
 
-    public DeliveryReportListViewAdapter(Context context, ArrayList<Delivery> lstDeliveries) {
+    //Constructor
+    public DeliveryReportListViewAdapter(Context context, ArrayList<Delivery> lstDeliveries){
         super(context, R.layout.list_view_row_delivery_report,lstDeliveries);
         this.context = context;
         this.lstDeliveries = lstDeliveries;
@@ -54,8 +56,7 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
 
     //Method populates the appropriate Views with the appropriate data (stored in the shows ArrayList)
     @Override
-    public View getView(final int position, View convertView, @NonNull ViewGroup parent)
-    {
+    public View getView(final int position, View convertView, @NonNull ViewGroup parent){
         //View declarations
         TextView txtDeliveryID;
         TextView txtDeliveryClientID;
@@ -69,7 +70,7 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
         LayoutInflater inflater = ((Activity)context).getLayoutInflater();
         convertView = inflater.inflate(R.layout.list_view_row_delivery_report, parent, false);
 
-        //Component assignments
+        //View assignments
         txtDeliveryID = (TextView) convertView.findViewById(R.id.text_delivery_id);
         txtDeliveryClientID = (TextView) convertView.findViewById(R.id.text_delivery_client_id);
         txtDeliveryDate = (TextView) convertView.findViewById(R.id.text_delivery_date);
@@ -110,11 +111,12 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
                         @Override
                         public void onClick(DialogInterface dialog, int button) {
                             switch(button){
-                                //Deletes Delivery item if the user chooses the 'Yes' option
+                                //Deletes Delivery item if the user chooses the 'Yes' option, and removes the Delivery from the Calendar
                                 case AlertDialog.BUTTON_POSITIVE:
                                     action = "delete";
                                     lstDeliveries.get(position).requestWriteOfDelivery(context, action, new DataReceiver(new Handler()));
                                     deliveryToBeDeletedPosition = position;
+                                    deleteDeliveryInCalendar();
                                     new Stock().requestStockItems(null, context, new DataReceiver(new Handler()));
                                     break;
                                 case AlertDialog.BUTTON_NEGATIVE:
@@ -159,11 +161,9 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
         return convertView;
     }
 
-    //Method adds the items that were in the deleted Delivery back to the Stock.txt text file
+    //Method adds the items that were in the deleted Delivery back to the available Stock in the Firebase Database
     private void addItemsBackToStock(ArrayList<Stock> lstStock){
         try{
-            Log.v("GUBS", "Size is : " + deliveryToBeDeletedPosition);
-
             ArrayList<DeliveryItem> lstDeliveryItems = lstDeliveries.get(deliveryToBeDeletedPosition).getLstDeliveryItems();
             ArrayList<Stock> lstStockToBeUpdated = new ArrayList<>();
 
@@ -173,6 +173,7 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
                 for(int j = 0; j < lstStock.size(); j++){
                     String stockID = lstStock.get(j).getStockID();
 
+                    //Adds the deleted Delivery's Delivery Item quantity to the appropriate Stock quantity
                     if(deliveryItemID.equals(stockID)){
                         int stockQuantity = lstStock.get(j).getStockQuantity();
                         lstStock.get(j).setStockQuantity(stockQuantity + lstDeliveryItems.get(i).getDeliveryItemQuantity());
@@ -200,6 +201,7 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
             databaseReference.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
+                    //Writes the updated Stock quantities to the Firebase Database
                     for(int i = 0; i < lstStock.size(); i++){
                         databaseReference.child(lstStock.get(i).getStockID()).setValue(lstStock.get(i));
                     }
@@ -209,9 +211,34 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
 
                 @Override
                 public void onCancelled(DatabaseError error) {
-                    Log.i("Data", "Failed to read data, please check your internet connection");
+                    Log.i("Data", "Error while writing data to Firebase");
                 }
             });
+        }
+        catch(Exception exc){
+            Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Method deletes the Calendar entry for the Delivery
+    public void deleteDeliveryInCalendar() throws SecurityException{
+        try{
+            //Checks for permission to write to calendar, and deletes the Calendar event if permission has been granted
+            if(ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_CALENDAR) == PackageManager.PERMISSION_GRANTED) {
+                ContentResolver contentResolver = context.getContentResolver();
+                Cursor eventCursor = contentResolver.query(Uri.parse("content://com.android.calendar/events"), new String[] { "_id", "title"}, CalendarContract.Instances.CALENDAR_ID + " = ?", new String[] {"1"}, null);
+
+                while (eventCursor.moveToNext()){
+                    final long id = eventCursor.getLong(0);
+                    final String title = eventCursor.getString(1);
+                    if(title.equals("Delivery " + lstDeliveries.get(deliveryToBeDeletedPosition).getDeliveryID())){
+                        //Deletes the Delivery from the Calendar
+                        Uri eventsUri = Uri.parse("content://com.android.calendar/events");
+                        Uri eventUri = ContentUris.withAppendedId(eventsUri, id);
+                        context.getContentResolver().delete(eventUri, null, null);
+                    }
+                }
+            }
         }
         catch(Exception exc){
             Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -226,9 +253,11 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
 
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
+            //Processes the result when the Delivery has been written to the Firebase Database
             if(resultCode == FirebaseService.ACTION_WRITE_DELIVERY_RESULT_CODE){
                 boolean success = resultData.getBoolean(FirebaseService.ACTION_WRITE_DELIVERY);
 
+                //Displays appropriate message based on whether the Delivery was successfully written to the Firebase Database
                 if(success){
                     if(action.equals("update")){
                         Toast.makeText(context, "Delivery marked as complete", Toast.LENGTH_LONG).show();
@@ -238,9 +267,13 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
                     }
                 }
             }
+            //Processes the result when the Stock is fetched from the Firebase Database
             else if(resultCode == FirebaseService.ACTION_FETCH_STOCK_RESULT_CODE){
+                //Adds deleted Delivery Items from the Delivery back to Stock
                 ArrayList<Stock> lstStock = (ArrayList<Stock>) resultData.getSerializable(FirebaseService.ACTION_FETCH_STOCK);
                 addItemsBackToStock(lstStock);
+
+                //Removes the Delivery from the ListView
                 lstDeliveries.remove(deliveryToBeDeletedPosition);
                 notifyDataSetChanged();
             }

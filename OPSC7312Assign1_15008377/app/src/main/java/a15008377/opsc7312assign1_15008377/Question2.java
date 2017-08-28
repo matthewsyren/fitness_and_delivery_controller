@@ -1,9 +1,9 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
- * Description: Class displays Deliveries for the current date on a map using Google Maps Markers
+ * Description: Class displays Deliveries for the current date on a map using Google Maps Markers, and allows the user to optimise their route (if they have fewer than 23 Deliveries)
  */
 
 package a15008377.opsc7312assign1_15008377;
@@ -26,7 +26,6 @@ import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
-
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -35,15 +34,14 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-
 import java.util.ArrayList;
 import java.util.Calendar;
 
 public class Question2 extends BaseActivity implements OnMapReadyCallback {
     //Declarations
-    GoogleMap gMap;
-    ArrayList<LocationMarker> lstDestinations;
-    ArrayList<Delivery> lstDeliveries = new ArrayList<>();
+    private GoogleMap gMap;
+    private ArrayList<LocationMarker> lstDestinations;
+    private ArrayList<Delivery> lstDeliveries = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,11 +53,20 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback {
             super.onCreateDrawer();
             super.setSelectedNavItem(R.id.nav_home);
 
+            //Checks for permission to access current location, and asks for permission if it hasn't been granted
+            if(ContextCompat.checkSelfPermission(Question2.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(Question2.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PackageManager.PERMISSION_GRANTED);
+            }
+
             //Hides FloatingActionButton
             FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
             fab.setVisibility(View.INVISIBLE);
-            requestDeliveries(null);
 
+            //Displays ProgressBar
+            toggleProgressBarVisibility(View.VISIBLE);
+
+            //Requests the Deliveries from the Firebase Database
+            new Delivery().requestDeliveries(null, this, new DataReceiver(new Handler()), 0);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -70,12 +77,15 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback {
     @Override
     public void onMapReady(final GoogleMap googleMap) {
         try{
+            //Requests permission to access location if the permission is not granted, otherwise enables location tracking
             if(ContextCompat.checkSelfPermission(Question2.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
                 ActivityCompat.requestPermissions(Question2.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PackageManager.PERMISSION_GRANTED);
             }
             else{
                 googleMap.setMyLocationEnabled(true);
             }
+
+            //Sets the map and declares a LatLngBounds Builder (used to set zoom level when displaying all Deliveries for the day)
             gMap = googleMap;
             final LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
@@ -112,6 +122,7 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback {
                     try{
                         //Displays Markers for today's Deliveries, otherwise outputs a message saying no Deliveries have been scheduled for the current date
                         if(lstDestinations.size() != 0){
+                            //Bounds ensures all Deliveries will be visible once zoomed in
                             LatLngBounds bounds = builder.build();
                             googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 250));
                         }
@@ -137,10 +148,12 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback {
     //Method creates an ArrayList of markers to be displayed on the map
     public void displayMarkers(ArrayList<Delivery> lstDeliveries, ArrayList<Client> lstClients){
         try{
+            //Declarations
             final ArrayList<LocationMarker> lstMarkers = new ArrayList<>();
             Calendar calendar = Calendar.getInstance();
             String currentDate = calendar.get(Calendar.DAY_OF_MONTH) + "/" + (calendar.get(Calendar.MONTH) + 1) + "/" + calendar.get(Calendar.YEAR);
 
+            //Loops through the Deliveries and sets the title for each Marker, and adds each Marker to lstMarkers
             for(Delivery delivery : lstDeliveries){
                 if(delivery.getDeliveryDate().equals(currentDate)){
                     for(Client client : lstClients){
@@ -155,7 +168,7 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback {
 
             lstDestinations = lstMarkers;
             if(lstMarkers.size() > 0){
-                //Displays FloatingActionButton
+                //Displays FloatingActionButton if Deliveries are found for today
                 FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
                 fab.setVisibility(View.VISIBLE);
             }
@@ -163,45 +176,6 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback {
             //Sets up the Map for this Activity
             SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
             mapFragment.getMapAsync(this);
-
-        }
-        catch(Exception exc){
-            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    //Method calls the FirebaseService class and requests the Deliveries from the Firebase Database
-    public void requestDeliveries(String searchTerm){
-        try{
-            //Displays ProgressBar
-            toggleProgressBarVisibility(View.VISIBLE);
-
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(this).getUserKey();
-            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_FETCH_DELIVERIES);
-            intent.putExtra(FirebaseService.DELIVERY_COMPLETE, 0);
-            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            startService(intent);
-        }
-        catch(Exception exc){
-            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    //Method calls the FirebaseService class and requests the Clients from the Firebase Database
-    public void requestClients(String searchTerm){
-        try{
-            //Requests location information from the LocationService class
-            String firebaseKey = new User(this).getUserKey();
-            Intent intent = new Intent(getApplicationContext(), FirebaseService.class);
-            intent.putExtra(FirebaseService.FIREBASE_KEY, firebaseKey);
-            intent.setAction(FirebaseService.ACTION_FETCH_CLIENTS);
-            intent.putExtra(FirebaseService.SEARCH_TERM, searchTerm);
-            intent.putExtra(FirebaseService.RECEIVER, new DataReceiver(new Handler()));
-            startService(intent);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -211,29 +185,33 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback {
     //Method sends the route information to the Google Maps API, which will then return the most efficient route between the destinations
     public void optimiseRoute(View view){
         if(lstDestinations.size() <= 23){
-            //Creates LocationManager and checks to ensure that the device has location permissions
-            final LocationManager locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
-            if(ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
-                ActivityCompat.requestPermissions( this, new String[] {  Manifest.permission.ACCESS_FINE_LOCATION  }, 1 );
+            //Ensure that the device has location access permissions, before trying to optimise the route
+            if(ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) == PackageManager.PERMISSION_GRANTED ) {
+                //Declares a LocationManager and uses the current location as the final destination of the trip (the Delivery vehicle goes back to the same place that it started at the end of the day)
+                final LocationManager locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+                Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                Intent intent = new Intent(Question2.this, RoutePlannerActivity.class);
+
+                //Passes the Delivery data to the Google Maps APU
+                String url = "https://maps.googleapis.com/maps/api/directions/json?origin=" + latLng.latitude + ", " + latLng.longitude + "&destination=" + latLng.latitude + ", " + latLng.longitude + "&waypoints=optimize:true";
+                for(int i = 0; i < lstDestinations.size(); i++){
+                    url += "|" + lstDestinations.get(i).getLocation().latitude + "," + lstDestinations.get(i).getLocation().longitude;
+                }
+                url += "&key=AIzaSyB-hYaZ4URR-NVjYV0vpgIAUYb4B3Z9Y2g";
+                intent.putExtra("routeURL", url);
+                intent.putExtra("lstDeliveries", lstDeliveries);
+                startActivity(intent);
             }
-            Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-            Intent intent = new Intent(Question2.this, RoutePlannerActivity.class);
-            String url = "https://maps.googleapis.com/maps/api/directions/json?origin=" + latLng.latitude + ", " + latLng.longitude + "&destination=" + latLng.latitude + ", " + latLng.longitude + "&waypoints=optimize:true";
-            for(int i = 0; i < lstDestinations.size(); i++){
-                url += "|" + lstDestinations.get(i).getLocation().latitude + "," + lstDestinations.get(i).getLocation().longitude;
+            else{
+                Toast.makeText(getApplicationContext(), "Please enable location tracking before using this feature", Toast.LENGTH_LONG).show();
             }
-            url += "&key=AIzaSyB-hYaZ4URR-NVjYV0vpgIAUYb4B3Z9Y2g";
-            intent.putExtra("routeURL", url);
-            intent.putExtra("lstDeliveries", lstDeliveries);
-            startActivity(intent);
         }
         else{
             Toast.makeText(getApplicationContext(), "Unable to calculate directions and optimise route, as too manny Deliveries have been entered for today. If you would like to optimise the route, you will need to have less than 23 Deliveries scheduled for today.", Toast.LENGTH_LONG).show();
         }
     }
 
-    //https://stackoverflow.com/questions/36918219/how-to-disable-user-interaction-while-progressbar-is-visible-in-android
     //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
     public void toggleProgressBarVisibility(int visibility){
         try{
@@ -262,15 +240,18 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback {
 
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
+            //Processes the result when the Deliveries are fetched from the Firebase Database
             if(resultCode == FirebaseService.ACTION_FETCH_DELIVERIES_RESULT_CODE){
                 lstDeliveries = (ArrayList<Delivery>) resultData.getSerializable(FirebaseService.ACTION_FETCH_DELIVERIES);
-                requestClients(null);
+                new Client().requestClients(null, getApplicationContext(), this );
             }
+            //Processes the result when the Clients are fetched from the Firebase Database
             else if(resultCode == FirebaseService.ACTION_FETCH_CLIENTS_RESULT_CODE){
                 ArrayList<Client> lstClients = (ArrayList<Client>) resultData.getSerializable(FirebaseService.ACTION_FETCH_CLIENTS);
                 displayMarkers(lstDeliveries, lstClients);
             }
 
+            //Hides the ProgressBar
             toggleProgressBarVisibility(View.INVISIBLE);
         }
     }

@@ -1,3 +1,11 @@
+/*
+ * Author: Matthew Syrén
+ *
+ * Date:   29 August 2017
+ *
+ * Description: Class used to track a user's Running route.
+ */
+
 package a15008377.opsc7312assign1_15008377;
 
 import android.Manifest;
@@ -10,16 +18,17 @@ import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
-
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -35,13 +44,11 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-
 import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 
-public class Question1B extends FragmentActivity implements OnMapReadyCallback {
+public class Question1B extends AppCompatActivity implements OnMapReadyCallback {
     //Declarations
     private GoogleMap mMap;
     private PolylineOptions polylineOptions = new PolylineOptions();
@@ -61,10 +68,48 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.activity_question1b);
 
-            //Obtain the SupportMapFragment and get notified when the map is ready to be used.
+            //Displays Back button in ActionBar
+            ActionBar actionBar = getSupportActionBar();
+            if(actionBar != null){
+                actionBar.setDisplayHomeAsUpEnabled(true);
+                actionBar.setTitle("Question 1B");
+            }
+
+            //Fetches the SupportMapFragment and gets a reference to the Firebase Database
             SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
             mapFragment.getMapAsync(this);
             mStorageRef = FirebaseStorage.getInstance().getReference();
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Takes the user back to the StartActivity when the back button is pressed
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        try{
+            int id = item.getItemId();
+
+            //Takes the user back to the StartActivity if the button that was pressed was the back button
+            if (id == android.R.id.home) {
+                Intent intent = new Intent(Question1B.this, StartActivity.class);
+                startActivity(intent);
+            }
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    //Method takes the user back to the StartActivity when they click on the back button
+    @Override
+    public void onBackPressed() {
+        try{
+            Intent intent = new Intent(Question1B.this, StartActivity.class);
+            startActivity(intent);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -91,16 +136,17 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
         }
     }
 
+    //Changes the FloatingActionButton image
     public void toggleFloatingActionButtonImage(){
         try{
             //Changes the icon of the FloatingActionButton
             FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.floating_action_button_track_route);
             if(fab.getTag().equals("Stop")){
-                fab.setImageResource(R.drawable.ic_run);
+                fab.setImageResource(R.drawable.ic_directions_run_black_24dp);
                 fab.setTag("Run");
             }
             else{
-                fab.setImageResource(R.drawable.ic_stop);
+                fab.setImageResource(R.drawable.ic_stop_black_24dp);
                 fab.setTag("Stop");
             }
         }
@@ -123,10 +169,11 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
     //Method begins tracking the user's location, with a polyline being drawn over the path that the user moves (whenever the location changes, a polyline is drawn between the previous location and the new location)
     public void beginLocationTracking() throws SecurityException{
         try{
+            //Sets the user's location on the map and gets the time that location tracking began
             mMap.setMyLocationEnabled(true);
             startTime = System.currentTimeMillis();
 
-            //Creates LocationManager object and registers a LocationChangedListener
+            //Creates LocationManager object and zooms to the last known location
             locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
             Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
@@ -140,9 +187,12 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
             locationListener = new LocationListener() {
                 @Override
                 public void onLocationChanged(Location location) {
+                    //Adds the current location to the builder (which is then used to determine the zoom level when the user ends the location tracking)
                     LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
                     builder.include(latLng);
                     latLngBoundsCount++;
+
+                    //Zooms to new location and draws polyline between the current location and the previous location
                     zoomToLocation(latLng);
                     drawPolyline(latLng);
                     if(previousLocation != null){
@@ -182,13 +232,12 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
         switch(requestCode){
             case LOCATION_PERMISSION_KEY:
                 if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    //Starts tracking the user's movements
                     beginLocationTracking();
                 }
                 else{
                     Toast.makeText(getApplicationContext(), "In order to use this page, you will need to allow the app to access your current location...", Toast.LENGTH_LONG).show();
                 }
-                break;
-            default:
                 break;
         }
     }
@@ -207,9 +256,14 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
     //Method draws a polyline between the points that the user has visited while the app has been open
     public void drawPolyline(LatLng position){
         try{
-            polylineOptions.add(position);
-            polylineOptions.width(5).color(Color.BLUE);
-            mMap.addPolyline(polylineOptions);
+            if(position == null){
+                mMap.clear();
+            }
+            else{
+                polylineOptions.add(position);
+                polylineOptions.width(5).color(Color.BLUE);
+                mMap.addPolyline(polylineOptions);
+            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -219,10 +273,12 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
     //Method ends the location tracking of the user, and asks them if they would like to save their route details
     public void endLocationTracking(){
         try{
+            //Stops location updates
             locationManager.removeUpdates(locationListener);
             locationListener = null;
             Toast.makeText(getApplicationContext(), "Route tracking stopped", Toast.LENGTH_LONG).show();
 
+            //Zooms out to show the entire route taken by the user (if movement was detected)
             if(latLngBoundsCount > 0){
                 //Zooms out to display the entire route taken by the user
                 LatLngBounds bounds = builder.build();
@@ -231,6 +287,8 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
 
                 //Changes the icon of the FloatingActionButton
                 toggleFloatingActionButtonImage();
+
+                //Asks the user if they'd like to save the details of their Run
                 promptToSaveUserDetails();
             }
             else{
@@ -256,10 +314,12 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
                 public void onClick(DialogInterface dialog, int button) {
                     switch(button){
                         case AlertDialog.BUTTON_POSITIVE:
+                            //Saves the user's Run details
                             saveUserDetails();
                             break;
                         case AlertDialog.BUTTON_NEGATIVE:
                             Toast.makeText(getApplicationContext(), "Route information not saved", Toast.LENGTH_LONG).show();
+                            drawPolyline(null);
                             break;
                     }
                 }
@@ -293,11 +353,13 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
             averageSpeed = Math.round(averageSpeed);
             distanceTravelled = Math.round(distanceTravelled);
 
-            //Gets a reference to the Firebase Database (with a randomised key for the Run), creates a Run object and writes the data to the Firebase Database and the image to Firebase Storage
+            //Gets a reference to the Firebase Database (with a randomised key for the Run), creates a Run object
             FirebaseDatabase database = FirebaseDatabase.getInstance();
             DatabaseReference databaseReference = database.getReference().child(new User(this).getUserKey()).child("runs");
             String key = databaseReference.push().getKey();
             Run run = new Run(startDate, endDate, distanceTravelled, averageSpeed);
+
+            //Takes a screenshot of the map and writes it to Firebase Storage
             saveScreenshot(databaseReference, key, run);
         }
         catch(Exception exc){
@@ -325,16 +387,16 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
                 public void onSnapshotReady(Bitmap bitmap) {
                     try{
                         //Converts the Bitmap image (screenshot of the map) to a byte array
-                        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 40, bytes);
+                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 40, byteArrayOutputStream);
 
                         //Saves the image to Firebase Storage (with the name of [key for run].jpg
                         StorageReference storageReference = mStorageRef.child(key + ".jpg");
-                        storageReference.putBytes(bytes.toByteArray()).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                        storageReference.putBytes(byteArrayOutputStream.toByteArray()).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                             @Override
                             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                //Saves the Run details to the Firebase Database once the screenshot has been uploaded
                                 saveRunDetails(databaseReference, key, run);
-
                             }
                         }).addOnFailureListener(new OnFailureListener() {
                             @Override
@@ -362,6 +424,7 @@ public class Question1B extends FragmentActivity implements OnMapReadyCallback {
         try{
             databaseReference.child(key).setValue(run);
             Toast.makeText(getApplicationContext(), "Run information saved", Toast.LENGTH_LONG).show();
+            drawPolyline(null);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();

@@ -1,4 +1,4 @@
-/**
+/*
  * Author: Matthew Syrén
  *
  * Date:   19 May 2017
@@ -82,7 +82,10 @@ public class ClientReportListViewAdapter extends ArrayAdapter{
                         switch(button){
                             //Attempts to delete the Client if the user chooses the 'Yes' option in the AlertDialog
                             case AlertDialog.BUTTON_POSITIVE:
+                                //Sets the position in the ArrayList of the Client that is to be deleted
                                 clientToBeDeletedPosition = position;
+
+                                //Requests Deliveries from the Firebase Database (the Client will not be deleted if there are any incomplete Deliveries for them)
                                 new Delivery().requestDeliveries(null, context, new DataReceiver(new Handler()), 0);
                                 break;
                             case AlertDialog.BUTTON_NEGATIVE:
@@ -111,19 +114,26 @@ public class ClientReportListViewAdapter extends ArrayAdapter{
 
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
+            //Processes the result when the Client is written to the Firebase Database
             if(resultCode == FirebaseService.ACTION_WRITE_CLIENT_RESULT_CODE){
                 boolean success = resultData.getBoolean(FirebaseService.ACTION_WRITE_CLIENT);
 
-                if (success) {
+                //Removes the Client from the ListView if the Client was deleted successfully
+                if(success){
                     Toast.makeText(context, "Client deleted successfully", Toast.LENGTH_LONG).show();
-
                     lstClients.remove(clientToBeDeletedPosition);
                     notifyDataSetChanged();
                 }
+                else{
+                    Toast.makeText(context, "An error occurred while deleting the Client, please try again", Toast.LENGTH_LONG).show();
+                }
             }
+            //Processes the result when the Deliveries are fetched from the Firebase Database
             else if(resultCode == FirebaseService.ACTION_FETCH_DELIVERIES_RESULT_CODE){
                 ArrayList<Delivery> lstDeliveries = (ArrayList<Delivery>) resultData.getSerializable(FirebaseService.ACTION_FETCH_DELIVERIES);
                 boolean clientUsed = false;
+
+                //Ensures that any incomplete Deliveries aren't for the Client that the user wants to delete
                 for(Delivery delivery : lstDeliveries){
                     if(delivery.getDeliveryClientID().equals(lstClients.get(clientToBeDeletedPosition).getClientID())){
                         clientUsed = true;
@@ -131,6 +141,7 @@ public class ClientReportListViewAdapter extends ArrayAdapter{
                     }
                 }
 
+                //Requests the deletion of the Client if there are no outstanding Deliveries for the Client
                 if(!clientUsed){
                     lstClients.get(clientToBeDeletedPosition).requestWriteOfClient( "delete", context, new DataReceiver(new Handler()));
                 }

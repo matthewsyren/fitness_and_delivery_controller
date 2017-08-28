@@ -1,7 +1,7 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
  * Description: Class displays Stock object information in the appropriate ListView
  */
@@ -83,6 +83,8 @@ public class StockReportListViewAdapter extends ArrayAdapter {
                                 switch (button) {
                                     case AlertDialog.BUTTON_POSITIVE:
                                         stockToBeDeletedPosition = position;
+
+                                        //Fetches the Deliveries to ensure that no Deliveries use the Stock item that is being deleted
                                         new Delivery().requestDeliveries(null, context, new DataReceiver(new Handler()), 0);
                                         break;
                                     case AlertDialog.BUTTON_NEGATIVE:
@@ -115,18 +117,23 @@ public class StockReportListViewAdapter extends ArrayAdapter {
 
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
+            //Processes the result when the Stock is written to the Firebase Database
             if(resultCode == FirebaseService.ACTION_WRITE_STOCK_RESULT_CODE) {
                 boolean success = resultData.getBoolean(FirebaseService.ACTION_WRITE_STOCK);
 
+                //Removes the Stock item from the ListView if the deletion was successful
                 if (success) {
                     lstStock.remove(stockToBeDeletedPosition);
                     notifyDataSetChanged();
                     Toast.makeText(context, "Stock Item deleted successfully", Toast.LENGTH_LONG).show();
                 }
             }
+            //Processes the result when the Deliveries are fetched from the Firebase Database
             else if(resultCode == FirebaseService.ACTION_FETCH_DELIVERIES_RESULT_CODE){
                 ArrayList<Delivery> lstDeliveries = (ArrayList<Delivery>) resultData.getSerializable(FirebaseService.ACTION_FETCH_DELIVERIES);
                 boolean stockUsed = false;
+
+                //Checks to see if any Deliveries are using the Stock that the user wants to delete
                 for(int i = 0; i < lstDeliveries.size() && stockUsed == false; i++){
                     Delivery delivery = lstDeliveries.get(i);
                     for(DeliveryItem deliveryItem : delivery.getLstDeliveryItems()){
@@ -137,6 +144,7 @@ public class StockReportListViewAdapter extends ArrayAdapter {
                     }
                 }
 
+                //Deletes the Stock item if no Deliveries are using the Stock item
                 if(!stockUsed){
                     lstStock.get(stockToBeDeletedPosition).requestWriteOfStockItem(context, "delete", new DataReceiver(new Handler()));
                 }

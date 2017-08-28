@@ -1,7 +1,7 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
  * Description: Class allows you to add or update Stock information
  */
@@ -14,7 +14,6 @@ import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
@@ -22,17 +21,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
-
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
 import java.util.Locale;
 
 public class StockActivity extends AppCompatActivity {
@@ -45,6 +33,7 @@ public class StockActivity extends AppCompatActivity {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.activity_add_stock);
 
+            //Displays the Views for this Activity
             displayViews();
         }
         catch(Exception exc){
@@ -126,19 +115,23 @@ public class StockActivity extends AppCompatActivity {
             //Displays ProgressBar
             toggleProgressBarVisibility(View.VISIBLE);
 
+            //View assignments
             EditText txtStockID = (EditText) findViewById(R.id.text_stock_id);
             EditText txtStockDescription = (EditText) findViewById(R.id.text_stock_description);
             EditText txtStockQuantity = (EditText) findViewById(R.id.text_stock_quantity);
 
+            //Variable assignments
             String stockID = txtStockID.getText().toString();
             String stockDescription = txtStockDescription.getText().toString();
             int stockQuantity = Integer.parseInt(txtStockQuantity.getText().toString());
 
+            //Ensures that Stock object is valid
             final Stock stock = new Stock(stockID, stockDescription, stockQuantity);
             if(stock.validateStock(this)){
                 //Displays ProgressBar
                 toggleProgressBarVisibility(View.VISIBLE);
 
+                //Sends the Stock item to be written to the Firebase Database
                 stock.requestWriteOfStockItem(this, action, new DataReceiver(new Handler()));
             }
         }
@@ -178,13 +171,17 @@ public class StockActivity extends AppCompatActivity {
 
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
+            //Processes the result when the Stock has been written to the Firebase Database
             if(resultCode == FirebaseService.ACTION_WRITE_STOCK_RESULT_CODE){
                 boolean success = resultData.getBoolean(FirebaseService.ACTION_WRITE_STOCK);
 
+                //Performs the appropriate action based on whether the data was written to the Firebase Database successfully
                 if(success){
                     Intent intent;
                     if(action.equals("add")){
                         Toast.makeText(getApplicationContext(), "Stock successfully added", Toast.LENGTH_LONG).show();
+
+                        //Refreshes the Activity to allow the user to add more Stock if need be
                         intent = getIntent();
                         finish();
                     }

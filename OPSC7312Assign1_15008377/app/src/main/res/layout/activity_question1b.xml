@@ -22,7 +22,7 @@
         android:layout_above="@+id/floating_action_button_track_route"
         android:layout_alignParentEnd="true"
         android:layout_marginEnd="@dimen/fab_margin"
-        app:srcCompat="@drawable/ic_history"
+        app:srcCompat="@drawable/ic_history_black_24dp"
         android:background="@color/colorPrimary"
         android:onClick="viewHistoryOnClick"/>
 
@@ -34,7 +34,7 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
         android:layout_margin="@dimen/fab_margin"
-        app:srcCompat="@drawable/ic_run"
+        app:srcCompat="@drawable/ic_directions_run_black_24dp"
         android:background="@color/colorPrimary"
         android:onClick="checkTracking"/>
 </RelativeLayout>

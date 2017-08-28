@@ -1,25 +1,20 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
  * Description: Class displays a report of all Deliveries that have been completed
  */
 
 package a15008377.opsc7312assign1_15008377;
 
-import android.content.Context;
-import android.content.Intent;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -56,6 +51,7 @@ public class CompletedDeliveryActivity extends BaseActivity {
 
                 }
             });
+
             //Displays ProgressBar
             toggleProgressBarVisibility(View.VISIBLE);
 
@@ -70,13 +66,11 @@ public class CompletedDeliveryActivity extends BaseActivity {
     //Method fetches the Deliveries that match the search result and send them to the displayDeliveries method
     public void searchDeliveries(EditText txtSearchDelivery){
         try{
-            //Fetches the search term and requests Deliveries that match the search term
-            String searchTerm = txtSearchDelivery.getText().toString();
-
             //Displays ProgressBar
             toggleProgressBarVisibility(View.VISIBLE);
 
-            //Requests the Deliveries from the Firebase Database
+            //Fetches the search term and requests Deliveries that match the search term
+            String searchTerm = txtSearchDelivery.getText().toString();
             new Delivery().requestDeliveries(searchTerm, this, new DataReceiver(new Handler()), 1);
         }
         catch(Exception exc){
@@ -124,6 +118,7 @@ public class CompletedDeliveryActivity extends BaseActivity {
 
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
+            //Processes the result when the Deliveries are fetched from the Firebase Database
             if(resultCode == FirebaseService.ACTION_FETCH_DELIVERIES_RESULT_CODE){
                 ArrayList<Delivery> lstDeliveries = (ArrayList<Delivery>) resultData.getSerializable(FirebaseService.ACTION_FETCH_DELIVERIES);
 
@@ -134,6 +129,8 @@ public class CompletedDeliveryActivity extends BaseActivity {
                 else{
                     Toast.makeText(getApplicationContext(), "Deliveries fetched", Toast.LENGTH_LONG).show();
                 }
+
+                //Displays the Deliveries
                 displayDeliveries(lstDeliveries);
 
                 //Hides ProgressBar

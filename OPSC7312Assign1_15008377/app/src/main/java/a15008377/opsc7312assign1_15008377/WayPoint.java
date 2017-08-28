@@ -1,10 +1,15 @@
-package a15008377.opsc7312assign1_15008377;
-
-/**
- * Created by Matthew Syrén on 2017/08/24.
+/*
+ * Author: Matthew Syrén
+ *
+ * Date:   29 August 2017
+ *
+ * Description: Class provides a basis for a WayPoint object
  */
 
+package a15008377.opsc7312assign1_15008377;
+
 public class WayPoint {
+    //Declarations
     private String deliveryID;
     private String clientID;
     private String clientPhoneNumber;
@@ -12,6 +17,7 @@ public class WayPoint {
     private String legDistance;
     private String legDuration;
 
+    //Constructor
     public WayPoint(String deliveryID, String clientID, String clientPhoneNumber, String clientAddress, String legDistance, String legDuration) {
         this.deliveryID = deliveryID;
         this.clientID = clientID;
@@ -21,6 +27,7 @@ public class WayPoint {
         this.legDuration = legDuration;
     }
 
+    //Getter methods
     public String getDeliveryID() {
         return deliveryID;
     }

@@ -68,7 +68,7 @@
                     <ImageButton
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:src="@drawable/ic_delete"
+                        android:src="@drawable/ic_delete_black_24dp"
                         android:id="@+id/button_delete_delivery"
                         android:focusable="false"
                         android:background="@drawable/button_rounded"

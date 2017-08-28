@@ -1,7 +1,7 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
  * Description: Class provides a template for a DeliveryItem object
  */
@@ -21,6 +21,7 @@ public class DeliveryItem implements Serializable{
         this.deliveryItemQuantity = deliveryItemQuantity;
     }
 
+    //Default constructor
     public DeliveryItem(){}
 
     //Getter methods

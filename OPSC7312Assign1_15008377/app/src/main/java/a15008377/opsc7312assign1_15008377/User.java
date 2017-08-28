@@ -1,22 +1,26 @@
+/*
+ * Author: Matthew Syrén
+ *
+ * Date:   29 August 2017
+ *
+ * Description: Class provides a basis for a User object
+ */
+
 package a15008377.opsc7312assign1_15008377;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 import android.widget.Toast;
-
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-/**
- * Class is used as a basis for to hold the data for the users of the program
- */
-
 @SuppressWarnings("WeakerAccess")
 public class User {
+    //Declarations
     private String userEmailAddress;
     private String userKey;
     private String userPassword;
@@ -73,7 +77,6 @@ public class User {
 
             @Override
             public void onCancelled(DatabaseError error) {
-                // Failed to read value
                 Log.i("Data", "Failed to read data");
             }
         });

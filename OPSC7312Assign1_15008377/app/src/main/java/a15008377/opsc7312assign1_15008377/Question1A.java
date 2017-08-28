@@ -1,3 +1,11 @@
+/*
+ * Author: Matthew Syrén
+ *
+ * Date:   29 August 2017
+ *
+ * Description: Class used to receive the response from the APIConnection class
+ */
+
 package a15008377.opsc7312assign1_15008377;
 
 import android.Manifest;
@@ -12,13 +20,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.os.ResultReceiver;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
 
 public class Question1A extends AppCompatActivity {
 
@@ -31,6 +40,14 @@ public class Question1A extends AppCompatActivity {
             //Displays ProgressBar
             toggleProgressBarVisibility(View.VISIBLE);
 
+            //Displays Back button in ActionBar
+            ActionBar actionBar = getSupportActionBar();
+            if(actionBar != null){
+                actionBar.setDisplayHomeAsUpEnabled(true);
+                actionBar.setTitle("Question 1A");
+            }
+
+            //Checks for permission to access current location, and requests the permission if it is not granted
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
                 ActivityCompat.requestPermissions(Question1A.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             }
@@ -41,6 +58,25 @@ public class Question1A extends AppCompatActivity {
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    //Takes the user back to the StartActivity when the back button is pressed
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        try{
+            int id = item.getItemId();
+
+            //Takes the user back to the StartActivity if the button that was pressed was the back button
+            if (id == android.R.id.home) {
+                Intent intent = new Intent(Question1A.this, StartActivity.class);
+                startActivity(intent);
+            }
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     //Method registers a LocationManager and onLocationChanged listener
@@ -105,6 +141,7 @@ public class Question1A extends AppCompatActivity {
 
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
+            //Updates the current address whenever the LocationService sends a new address
             String result = resultData.getString(LocationService.RESULT_KEY);
             TextView textView = (TextView) findViewById(R.id.text_address);
             Resources resources = getResources();

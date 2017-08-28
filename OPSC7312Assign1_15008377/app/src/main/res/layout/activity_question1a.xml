@@ -11,7 +11,9 @@
         android:id="@+id/text_address"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"/>
+        android:layout_centerInParent="true"
+        android:layout_margin="@dimen/activity_horizontal_margin"
+        android:textColor="@color/black"/>
 
     <ProgressBar
         android:layout_width="@dimen/progress_bar_diameter"

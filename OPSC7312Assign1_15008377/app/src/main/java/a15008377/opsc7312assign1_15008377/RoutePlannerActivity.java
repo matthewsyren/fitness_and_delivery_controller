@@ -1,39 +1,38 @@
+/*
+ * Author: Matthew Syrén
+ *
+ * Date:   29 August 2017
+ *
+ * Description: Class displays the optimised Route details for a day's Deliveries
+ */
+
 package a15008377.opsc7312assign1_15008377;
 
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.DataSetObserver;
-import android.location.Location;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Adapter;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
-
-import com.google.android.gms.maps.model.LatLng;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.util.ArrayList;
-import java.util.Calendar;
 
 public class RoutePlannerActivity extends AppCompatActivity implements IAPIConnectionResponse {
-    ArrayList<Client> lstClients = new ArrayList<>();
-    ArrayList<WayPoint> lstWayPoints;
+    //Declarations
+    private ArrayList<Client> lstClients = new ArrayList<>();
+    private ArrayList<WayPoint> lstWayPoints;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        try{
+        try {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.activity_route_planner);
 
@@ -42,27 +41,25 @@ public class RoutePlannerActivity extends AppCompatActivity implements IAPIConne
 
             //Fetches the Client information from Firebase
             new Client().requestClients(null, getApplicationContext(), new DataReceiver(new Handler()));
-        }
-        catch(Exception exc){
+        } catch (Exception exc) {
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
     //Method fetches the data for the day's Deliveries that was passed from the Question2
-    public void fetchDeliveryDetails(){
-        try{
+    public void fetchDeliveryDetails() {
+        try {
             Bundle bundle = getIntent().getExtras();
             String url = bundle.getString("routeURL", null);
-            if(url != null){
+            if (url != null) {
+                //Passes the route to the Google Maps API
                 APIConnection api = new APIConnection();
                 api.delegate = this;
                 api.execute(url);
+            } else {
+                Toast.makeText(getApplicationContext(), "No route was found, please try again", Toast.LENGTH_LONG).show();
             }
-            else{
-                Toast.makeText(getApplicationContext(), "Null", Toast.LENGTH_LONG).show();
-            }
-        }
-        catch(Exception exc){
+        } catch (Exception exc) {
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
@@ -70,8 +67,9 @@ public class RoutePlannerActivity extends AppCompatActivity implements IAPIConne
     //Method parses the JSON data returned from the Google Maps Directions API, then adds the data to an ArrayList of WayPoint objects before displaying the ArrayList's contents
     @Override
     public void getJsonResponse(String response) {
-        try{
-            if(response != null){
+        try {
+            if (response != null) {
+                //Parses the JSON
                 JSONObject jsonObject = new JSONObject(response);
                 JSONArray jsonArray = jsonObject.getJSONArray("routes");
                 Bundle bundle = getIntent().getExtras();
@@ -82,24 +80,29 @@ public class RoutePlannerActivity extends AppCompatActivity implements IAPIConne
                 JSONObject legObject;
                 JSONObject distance;
                 JSONObject duration;
+
+                //Adds the current location as the starting point for the route
                 lstWayPoints = new ArrayList<>();
                 String startAddress = "Current Location";
                 WayPoint wayPoint = new WayPoint("Start", "Start", "", startAddress, "0", "0");
                 lstWayPoints.add(wayPoint);
 
-                 //Loops through the way points in the order specified by the Google Maps API (the optimised route), and adds the data to a WayPoint ArrayList
-                for(int i = 0; i < waypoints.length(); i++){
+                //Loops through the way points in the order specified by the Google Maps API (the optimised route), and adds the data to a WayPoint ArrayList
+                for (int i = 0; i < waypoints.length(); i++) {
                     Delivery delivery = lstDeliveries.get(waypoints.getInt(i));
                     String clientAddress = "";
                     String clientPhoneNumber = "";
 
-                    for(Client client : lstClients){
-                        if(client.getClientID().equals(delivery.getDeliveryClientID())){
+                    //Fetches the Client's phone number and address
+                    for (Client client : lstClients) {
+                        if (client.getClientID().equals(delivery.getDeliveryClientID())) {
                             clientAddress = client.getClientAddress();
                             clientPhoneNumber = client.getClientPhoneNumber();
                             break;
                         }
                     }
+
+                    //Assigns additional information, creates a WayPoint object and adds the object to lstWayPoints
                     legObject = legs.getJSONObject(i);
                     distance = legObject.getJSONObject("distance");
                     duration = legObject.getJSONObject("duration");
@@ -107,11 +110,10 @@ public class RoutePlannerActivity extends AppCompatActivity implements IAPIConne
                     lstWayPoints.add(wayPoint);
                 }
 
+                //Fetches the end address and adds it to the lstWayPoints ArrayList
                 legObject = legs.getJSONObject(legs.length() - 1);
-                distance = legObject.getJSONObject("distance");
-                duration = legObject.getJSONObject("duration");
                 String endAddress = legObject.getString("end_address");
-                wayPoint = new WayPoint("End","End","", endAddress, distance.getString("text"), duration.getString("text"));
+                wayPoint = new WayPoint("End", "End", "", endAddress, "", "");
                 lstWayPoints.add(wayPoint);
 
                 //Displays the data from lstWayPoints
@@ -119,7 +121,7 @@ public class RoutePlannerActivity extends AppCompatActivity implements IAPIConne
                 final RouteListViewAdapter routeListViewAdapter = new RouteListViewAdapter(RoutePlannerActivity.this, lstWayPoints, lstDeliveries);
                 listView.setAdapter(routeListViewAdapter);
 
-                //Sets an OnItemClickListener, which will open the Google Maps app with the destination of the row that was clicked on
+                //Sets an OnItemClickListener, which will open the Google Maps app with the destination of the row that was clicked on, and the source being the current location
                 listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                     @Override
                     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -135,49 +137,45 @@ public class RoutePlannerActivity extends AppCompatActivity implements IAPIConne
 
                 //Hides ProgressBar
                 toggleProgressBarVisibility(View.INVISIBLE);
-            }
-            else{
+            } else {
                 Toast.makeText(getApplicationContext(), "There was a problem with fetching the data from Google Maps, please try again...", Toast.LENGTH_LONG).show();
             }
-        }
-        catch(JSONException json){
+        } catch (JSONException json) {
             Toast.makeText(getApplicationContext(), json.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
     //Opens the Google Maps app with a pre-populated route
-    public void viewOnMapOnClick(View view){
-        try{
+    public void viewOnMapOnClick(View view) {
+        try {
+            //Adds all WayPoints to the route
             String uri = "https://www.google.com/maps/dir/";
-            for(WayPoint wayPoint : lstWayPoints){
+            for (WayPoint wayPoint : lstWayPoints) {
                 uri += wayPoint.getClientAddress() + "/";
             }
 
             //Opens the Google Maps app with the destinations already entered
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
             startActivity(Intent.createChooser(intent, "Select an application"));
-        }
-        catch(Exception exc){
+        } catch (Exception exc) {
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
     //Method toggles the ProgressBar's visibility and disables touches when the ProgressBar is visible
-    public void toggleProgressBarVisibility(int visibility){
-        try{
+    public void toggleProgressBarVisibility(int visibility) {
+        try {
             //Toggles ProgressBar visibility
-            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar) ;
+            ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar);
             progressBar.setVisibility(visibility);
 
             //Enables touches on the screen if the ProgressBar is hidden, and disables touches on the screen when the ProgressBar is visible
-            if(visibility == View.VISIBLE){
+            if (visibility == View.VISIBLE) {
                 getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-            }
-            else{
+            } else {
                 getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
             }
-        }
-        catch(Exception exc){
+        } catch (Exception exc) {
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
@@ -189,10 +187,12 @@ public class RoutePlannerActivity extends AppCompatActivity implements IAPIConne
         }
 
         @Override
-        protected void onReceiveResult(int resultCode, Bundle resultData){
-            if(resultCode == FirebaseService.ACTION_FETCH_CLIENTS_RESULT_CODE){
+        protected void onReceiveResult(int resultCode, Bundle resultData) {
+            //Processes the result when the Clients are fetched from the Firebase Database
+            if (resultCode == FirebaseService.ACTION_FETCH_CLIENTS_RESULT_CODE) {
                 lstClients = (ArrayList<Client>) resultData.getSerializable(FirebaseService.ACTION_FETCH_CLIENTS);
-                if(lstClients != null){
+                if (lstClients != null) {
+                    //Fetches the Delivery details once the Clients have been fetched
                     fetchDeliveryDetails();
                 }
             }

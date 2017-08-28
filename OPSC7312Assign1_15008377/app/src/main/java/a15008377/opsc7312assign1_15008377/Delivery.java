@@ -1,7 +1,7 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
  * Description: Class provides a template for a Delivery object
  */
@@ -10,12 +10,7 @@ package a15008377.opsc7312assign1_15008377;
 
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.SQLException;
-import android.os.Handler;
-import android.support.v4.media.MediaBrowserServiceCompat;
 import android.support.v4.os.ResultReceiver;
-import android.view.View;
 import android.widget.Toast;
 import java.io.IOException;
 import java.io.Serializable;
@@ -44,6 +39,7 @@ public class Delivery implements Serializable {
         this.lstDeliveryItems = lstDeliveryItems;
     }
 
+    //Default constructor
     public Delivery(){}
 
     //Getter methods
@@ -68,10 +64,6 @@ public class Delivery implements Serializable {
     }
 
     //Setter methods
-    public void setLstDeliveryItems(ArrayList<DeliveryItem> lstDeliveryItems) {
-        this.lstDeliveryItems = lstDeliveryItems;
-    }
-
     public void setDeliveryComplete(int deliveryComplete) {
         this.deliveryComplete = deliveryComplete;
     }
@@ -100,21 +92,6 @@ public class Delivery implements Serializable {
         return validStock;
     }
 
-    //Method checks if the entered Client ID has already been taken. The method returns true if it has been taken, and false if it hasn't been taken
-    public boolean checkDeliveryID(Context context) throws IOException {
-        boolean deliveryIDTaken = false;
-        /*DBAdapter dbAdapter = new DBAdapter(context);
-        dbAdapter.open();
-        Cursor cursor = dbAdapter.getDelivery(deliveryID);
-        if(cursor.moveToFirst()){
-            deliveryIDTaken = true;
-            Toast.makeText(context, "Delivery ID is taken, please choose another one", Toast.LENGTH_LONG).show();
-        }
-        dbAdapter.close(); */
-
-        return deliveryIDTaken;
-    }
-
     //Method ensures that the user can't enter a date that is before today's date when adding a new Delivery
     public boolean checkDeliveryDate(Context context) throws ParseException {
         boolean validDate = true;
@@ -128,7 +105,7 @@ public class Delivery implements Serializable {
         return validDate;
     }
 
-    //Method calls the FirebaseService class and requests the Clients from the Firebase Database
+    //Method calls the FirebaseService class and requests the Deliveries from the Firebase Database
     public void requestDeliveries(String searchTerm, Context context, ResultReceiver resultReceiver, int deliveryComplete){
         try{
             //Requests location information from the LocationService class

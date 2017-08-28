@@ -1,7 +1,7 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
  * Description: Class provides the basis for the NavigationDrawer. The NavigationDrawer's processing is completed
  *              here, meaning any class that extends this class will have ful NavigationDrawer functionality
@@ -82,10 +82,9 @@ public class BaseActivity extends FragmentActivity
         return super.onOptionsItemSelected(item);
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
+    //Handles clicks on the NavigationDrawer
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        // Handle navigation view item clicks here.
         int id = item.getItemId();
 
         //Opens the appropriate Activity based on the menu item clicked in the Navigation Drawer
@@ -106,6 +105,9 @@ public class BaseActivity extends FragmentActivity
         }
         else if(id == R.id.nav_help){
             startActivity(new Intent(getApplicationContext(), HelpActivity.class));
+        }
+        else if(id == R.id.nav_back_to_start){
+            startActivity(new Intent(getApplicationContext(), StartActivity.class));
         }
 
         //Closes the NavigationDrawer once the action has been completed

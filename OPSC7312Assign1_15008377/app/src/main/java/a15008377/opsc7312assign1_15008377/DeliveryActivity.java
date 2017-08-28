@@ -1,14 +1,13 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
  * Description: Class allows you to add and update Delivery information
  */
 
 package a15008377.opsc7312assign1_15008377;
 
-import android.*;
 import android.Manifest;
 import android.app.DatePickerDialog;
 import android.content.ContentResolver;
@@ -43,14 +42,11 @@ import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -62,6 +58,7 @@ public class DeliveryActivity extends AppCompatActivity {
     private ArrayList<Stock> lstStock = new ArrayList<>();
     private ArrayList<DeliveryItem> lstOriginalDeliveryItems = new ArrayList<>();
     private Delivery newDelivery;
+    private ArrayList<Client> lstClients = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,13 +71,9 @@ public class DeliveryActivity extends AppCompatActivity {
             firebaseAction = "stock";
             new Stock().requestStockItems(null, this, new DataReceiver(new Handler()));
             new Client().requestClients(null, this, new DataReceiver(new Handler()));
+            checkPermissions();
 
-            if(ContextCompat.checkSelfPermission(DeliveryActivity.this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(DeliveryActivity.this, new String[]{Manifest.permission.WRITE_CALENDAR}, PackageManager.PERMISSION_GRANTED);
-            }
-
-
-            //Makes ListView scrollable in a ScrollView (see https://stackoverflow.com/questions/18367522/android-list-view-inside-a-scroll-view)
+            //Makes ListView within a ScrollView scrollable (Learnt from https://stackoverflow.com/questions/18367522/android-list-view-inside-a-scroll-view)
             ListView listView = (ListView) findViewById(R.id.list_view_delivery_items);
             listView.setOnTouchListener(new View.OnTouchListener() {
                 //Sets onTouchListener to allow scrolling in the ListView within a ScrollView
@@ -91,6 +84,24 @@ public class DeliveryActivity extends AppCompatActivity {
                     return false;
                 }
             });
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Method checks the permissions required for this page, and requests the permissions if they haven't been granted
+    public void checkPermissions(){
+        try{
+            //Checks for permission to send an SMS, and requests the permission if it is not granted
+            if(ContextCompat.checkSelfPermission(DeliveryActivity.this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(DeliveryActivity.this, new String[]{Manifest.permission.SEND_SMS}, 1);
+            }
+
+            //Checks for permission to write to the phone's calendar, and asks for permission if the permission is disabled
+            if(ContextCompat.checkSelfPermission(DeliveryActivity.this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(DeliveryActivity.this, new String[]{Manifest.permission.WRITE_CALENDAR}, PackageManager.PERMISSION_GRANTED);
+            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -127,7 +138,7 @@ public class DeliveryActivity extends AppCompatActivity {
             action = bundle.getString("action");
             Button button = (Button) findViewById(R.id.button_add_delivery);
 
-            //Changes Activity based on the user's action
+            //Changes Activity based on the user's action (add or update)
             if(action.equals("update")){
                 EditText txtDeliveryID = (EditText) findViewById(R.id.text_delivery_id);
                 txtDeliveryID.setEnabled(false);
@@ -186,7 +197,7 @@ public class DeliveryActivity extends AppCompatActivity {
     }
 
     //Method populates the spinner_delivery_client with all available clients
-    public void displaySpinnerClients(ArrayList<Client> lstClients){
+    public void displaySpinnerClients(){
         try{
             //Sets Adapter for the Spinner using lstClients
             ArrayAdapter adapter = new ArrayAdapter<>(getApplicationContext(), R.layout.spinner_row, R.id.text_spinner_item_id);
@@ -207,6 +218,7 @@ public class DeliveryActivity extends AppCompatActivity {
     //Method populates the spinner_delivery_items with items from the Stock text file, and removes the items that have been taken by the current Delivery already
     public void displaySpinnerDeliveryItems(ArrayList<Stock> lstStock){
         try{
+            //Declarations
             Spinner spinner = (Spinner) findViewById(R.id.spinner_delivery_items);
             ArrayAdapter<String> adapter;
             ArrayList<String> lstItems = new ArrayList<>();
@@ -264,6 +276,7 @@ public class DeliveryActivity extends AppCompatActivity {
     //Method displays a DatePickerDialog for the user to choose the Delivery date
     public void chooseDateOnClick(View view){
         try{
+            //Gets Calendar instance and displays a DatePicker
             Calendar calendar = Calendar.getInstance();
             DatePickerDialog datePickerDialog = new DatePickerDialog (this, new DatePickerDialog.OnDateSetListener(){
                 @Override
@@ -286,6 +299,7 @@ public class DeliveryActivity extends AppCompatActivity {
             //Displays ProgressBar
             toggleProgressBarVisibility(View.VISIBLE);
 
+            //Sets the firebaseAction variable to nothing (this variable is used in the DataReceiver class to determine which methods to call once the Stock has been downloaded)
             firebaseAction = "";
             new Stock().requestStockItems(null, this, new DataReceiver(new Handler()));
         }
@@ -299,6 +313,7 @@ public class DeliveryActivity extends AppCompatActivity {
         ArrayList<DeliveryItem> lstDeliveryItems = new ArrayList<>();
 
         try{
+            //Fetches the DeliveryItem objects that have been added to the Delivery
             ListView listView = (ListView) findViewById(R.id.list_view_delivery_items);
             for(int i = 0; i < listView.getCount(); i++){
                 lstDeliveryItems.add((DeliveryItem) listView.getItemAtPosition(i));
@@ -314,10 +329,12 @@ public class DeliveryActivity extends AppCompatActivity {
     //Method adds the a DeliveryItem to the list_view_delivery_items ListView
     public void addDeliveryItemOnClick(View view){
         try{
+            //Declarations
             Spinner spinner = (Spinner) findViewById(R.id.spinner_delivery_items);
             EditText txtQuantity = (EditText) findViewById(R.id.text_delivery_item_quantity);
             ArrayAdapter<String> spinnerAdapter = (ArrayAdapter<String>) spinner.getAdapter();
 
+            //Adds Stock item to Delivery (if there is a value selected in the Spinner)
             if(spinnerAdapter.getCount() == 0){
                 Toast.makeText(getApplicationContext(), "All items of stock have been added to the delivery already. You can change their quantities by clicking the + and - buttons in the list", Toast.LENGTH_LONG).show();
             }
@@ -325,12 +342,16 @@ public class DeliveryActivity extends AppCompatActivity {
                 //Creates a new DeliveryItem object and adds it to the lstDeliveryItems ArrayList
                 String deliveryItemID = spinner.getSelectedItem().toString();
                 int deliveryItemQuantity = Integer.parseInt(txtQuantity.getText().toString());
+
+                //Gets the Delivery Item's ID (the space in the Spinner signifies the end of the ID)
                 deliveryItemID = deliveryItemID.substring(0, deliveryItemID.indexOf(" "));
+
+                //Removes the Delivery Item from the Spinner
                 DeliveryItem deliveryItem = new DeliveryItem(deliveryItemID, deliveryItemQuantity);
                 spinnerAdapter.remove(spinner.getSelectedItem().toString());
                 spinnerAdapter.notifyDataSetChanged();
 
-                //Updates the adapter for list_view_delivery_items
+                //Updates the adapter for list_view_delivery_items by adding the Delivery Item
                 ListView listView = (ListView) findViewById(R.id.list_view_delivery_items);
                 DeliveryItemListViewAdapter deliveryItemListViewAdapter = (DeliveryItemListViewAdapter) listView.getAdapter();
                 deliveryItemListViewAdapter.add(deliveryItem);
@@ -357,7 +378,7 @@ public class DeliveryActivity extends AppCompatActivity {
             Spinner spinner = (Spinner) findViewById(R.id.spinner_delivery_client);
             boolean enoughStock = true;
 
-            //Assigns values to the Delivery object
+            //Assigns values that will be used for the Delivery object
             String deliveryID = txtDeliveryID.getText().toString();
             String deliveryDate = txtDeliveryDate.getText().toString();
             String clientID = spinner.getSelectedItem().toString();
@@ -365,6 +386,7 @@ public class DeliveryActivity extends AppCompatActivity {
             ArrayList<DeliveryItem> lstDeliveryItems = getDeliveryItems();
             final ArrayList<Stock> lstUpdatedStockItems = new ArrayList<>();
 
+            //Loops through the original items from the Delivery (as when updating the Delivery the Delivery Items may change), and determines if the updated Delivery has removed any Delivery Items
             for(DeliveryItem originalDeliveryItem : lstOriginalDeliveryItems){
                 boolean found = false;
                 for(DeliveryItem deliveryItem : lstDeliveryItems){
@@ -373,6 +395,8 @@ public class DeliveryActivity extends AppCompatActivity {
                         break;
                     }
                 }
+
+                //Adds the removed Delivery Item back to the list of Delivery Items for the updated Delivery, but with a quantity of 0 (this is then used to update the available Stock levels of the removed item)
                 if(!found){
                     originalDeliveryItem.setDeliveryItemQuantity(0);
                     lstDeliveryItems.add(originalDeliveryItem);
@@ -387,9 +411,9 @@ public class DeliveryActivity extends AppCompatActivity {
                     String stockID = lstStock.get(j).getStockID();
                     int availableStockQuantity = lstStock.get(j).getStockQuantity();
 
-                    //Checks if there is enough Stock of each item to cater for the Delivery
+                    //Resets available Stock quantity for each Stock item
                     if(deliveryStockID.equals(stockID)){
-                        //Resets the available Stock quantity when updating the Delivery, before subtracting the new number of Stock items
+                        //Resets the available Stock quantity when updating the Delivery
                         if(action.equals("update")){
                             for(Delivery delivery : lstDeliveries){
                                 if(delivery.getDeliveryID().equals(deliveryID)){
@@ -403,11 +427,13 @@ public class DeliveryActivity extends AppCompatActivity {
                             }
                         }
 
+                        //Checks to see if there is enough Stock to cater for each item
                         if(numberOfItems > availableStockQuantity){
                             Toast.makeText(getApplicationContext(), "There are only " + availableStockQuantity + " item/s left of " + deliveryStockID + " in stock. Please reduce the number of " + deliveryStockID + " items for this delivery", Toast.LENGTH_LONG).show();
                             enoughStock = false;
                         }
                         else{
+                            //Available Stock quantity is updated if there is enough Stock to cater for the Delivery (the amount of items used in the Delivery is subtracted from the available Stock quantity)
                             if(numberOfItems < 0){
                                 Toast.makeText(getApplicationContext(), "Avail: " + availableStockQuantity + "    Quan: " + numberOfItems, Toast.LENGTH_LONG).show();
                             }
@@ -430,8 +456,13 @@ public class DeliveryActivity extends AppCompatActivity {
 
                         //Attempts to write Delivery details to the Firebase Database
                         delivery.requestWriteOfDelivery(this, action, new DataReceiver(new Handler()));
+
+                        //Writes the updated available Stock quantities to the Firebase Database
                         newDelivery = delivery;
                         updateStockLevels(lstUpdatedStockItems);
+
+                        //Sends an SMS to the Client that tells them when their Delivery is scheduled for
+                        sendSMS(delivery);
                     }
                 }
             }
@@ -452,7 +483,7 @@ public class DeliveryActivity extends AppCompatActivity {
         }
     }
 
-    //Method receives an ArrayList of Stock items with an updated quantity, and updates the available quantity of stock in the Firebase Database
+    //Method receives an ArrayList of Stock items with an updated quantity, and updates the available quantity of Stock in the Firebase Database
     public void updateStockLevels(final ArrayList<Stock> lstStock){
         try{
             //Gets Firebase Database reference
@@ -463,16 +494,19 @@ public class DeliveryActivity extends AppCompatActivity {
             databaseReference.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
+                    //Writes the updated Stock to the Firebase Database
                     for(int i = 0; i < lstStock.size(); i++){
                         databaseReference.child(lstStock.get(i).getStockID()).setValue(lstStock.get(i));
                     }
+
+                    //Removes the EventListener for the Firebase Database and displays a message to the user
                     databaseReference.removeEventListener(this);
                     Toast.makeText(getApplicationContext(), "Stock levels updated", Toast.LENGTH_LONG).show();
                 }
 
                 @Override
                 public void onCancelled(DatabaseError error) {
-                    Log.i("Data", "Failed to read data, please check your internet connection");
+                    Log.i("Data", "An error occurred while connecting to Firebase");
                 }
             });
         }
@@ -484,63 +518,66 @@ public class DeliveryActivity extends AppCompatActivity {
     //Method writes the Delivery details to the calendar
     public void addDeliveryToCalendar() throws SecurityException{
         try{
-            Calendar deliveryDate = Calendar.getInstance();
-            String dateOfDelivery = newDelivery.getDeliveryDate();
-            String[] parsedDeliveryDate = dateOfDelivery.split("/");
+            //Checks for permission to write to calendar, and updates the Calendar event if permission has been granted
+            if(ContextCompat.checkSelfPermission(DeliveryActivity.this, Manifest.permission.WRITE_CALENDAR) == PackageManager.PERMISSION_GRANTED) {
+                //Gets Calendar instance and assigns values to the required ContentValues attributes
+                Calendar deliveryDate = Calendar.getInstance();
+                String dateOfDelivery = newDelivery.getDeliveryDate();
+                String[] parsedDeliveryDate = dateOfDelivery.split("/");
+                deliveryDate.set(Integer.parseInt(parsedDeliveryDate[2]), Integer.parseInt(parsedDeliveryDate[1]) - 1, Integer.parseInt(parsedDeliveryDate[0]), 8, 0);
+                long dateMilliseconds = deliveryDate.getTimeInMillis();
+                ContentResolver contentResolver = getContentResolver();
+                ContentValues values = new ContentValues();
+                values.put(CalendarContract.Events.DTSTART, dateMilliseconds);
+                values.put(CalendarContract.Events.DTEND, dateMilliseconds);
+                values.put(CalendarContract.Events.TITLE, "Delivery " + newDelivery.getDeliveryID());
+                values.put(CalendarContract.Events.DESCRIPTION, "Client: " + newDelivery.getDeliveryClientID());
+                values.put(CalendarContract.Events.CALENDAR_ID, 1);
+                values.put(CalendarContract.Events.ALL_DAY, true);
+                values.put(CalendarContract.Events.HAS_ALARM, true);
+                values.put(CalendarContract.Events.EVENT_TIMEZONE, TimeZone.getDefault().getID());
 
-            deliveryDate.set(Integer.parseInt(parsedDeliveryDate[2]), Integer.parseInt(parsedDeliveryDate[1]) - 1, Integer.parseInt(parsedDeliveryDate[0]), 8, 0);
-            long dateMilliseconds = deliveryDate.getTimeInMillis();
-
-            ContentResolver cr = getContentResolver();
-            ContentValues values = new ContentValues();
-            values.put(CalendarContract.Events.DTSTART, dateMilliseconds);
-            values.put(CalendarContract.Events.DTEND, dateMilliseconds);
-            values.put(CalendarContract.Events.TITLE, "Delivery " + newDelivery.getDeliveryID());
-            values.put(CalendarContract.Events.DESCRIPTION, "Client: " + newDelivery.getDeliveryClientID());
-            values.put(CalendarContract.Events.CALENDAR_ID, 1);
-            values.put(CalendarContract.Events.ALL_DAY, true);
-            values.put(CalendarContract.Events.HAS_ALARM, true);
-
-            //Get current timezone
-            values.put(CalendarContract.Events.EVENT_TIMEZONE, TimeZone.getDefault().getID());
-            Uri uri = cr.insert(CalendarContract.Events.CONTENT_URI, values);
-            long eventID = Long.parseLong(uri.getLastPathSegment());
-            Toast.makeText(getApplicationContext(), "Event ID: " + eventID, Toast.LENGTH_LONG ).show();
+                //Adds the Delivery to the user's Calendar
+                contentResolver.insert(CalendarContract.Events.CONTENT_URI, values);
+            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
-    //https://stackoverflow.com/questions/22942473/how-to-update-and-remove-calendar-event-in-android
-    //https://stackoverflow.com/questions/13232717/how-to-get-all-the-events-from-calendar
+    //Updates the details of a Calendar event when a Delivery is updated (learnt from https://stackoverflow.com/questions/13232717/how-to-get-all-the-events-from-calendar and https://stackoverflow.com/questions/22942473/how-to-update-and-remove-calendar-event-in-android)
     public void updateDeliveryInCalendar() throws SecurityException{
         try{
-            ContentResolver contentResolver = getContentResolver();
-            final Cursor cursor = contentResolver.query(CalendarContract.Calendars.CONTENT_URI, (new String[]{CalendarContract.Calendars._ID, CalendarContract.Calendars.CALENDAR_DISPLAY_NAME}), null, null, null);
-            while (cursor.moveToNext()) {
-                final String _id = cursor.getString(0);
-                final String displayName = cursor.getString(1);
+            //Checks for permission to write to calendar, and updates the Calendar event if permission has been granted
+            if(ContextCompat.checkSelfPermission(DeliveryActivity.this, Manifest.permission.WRITE_CALENDAR) == PackageManager.PERMISSION_GRANTED){
+                //Gets ContentResolver and fetches the available Calendars from the phone
+                ContentResolver contentResolver = getContentResolver();
 
-                Cursor eventCursor = getApplicationContext().getContentResolver().query(Uri.parse("content://com.android.calendar/events"), new String[] { "_id", "title"}, CalendarContract.Instances.CALENDAR_ID + " = ?", new String[] {"1"}, null);
+                //Fetches all events from the default Calendar
+                Cursor eventCursor = contentResolver.query(Uri.parse("content://com.android.calendar/events"), new String[] { "_id", "title"}, CalendarContract.Instances.CALENDAR_ID + " = ?", new String[] {"1"}, null);
 
-                while (eventCursor.moveToNext()) {
+                //Loops through the Calendar events until the event that is to be updated is found
+                while (eventCursor.moveToNext()){
                     final long id = eventCursor.getLong(0);
                     final String title = eventCursor.getString(1);
+
+                    //Compares Calendar event title to the title of the event that needs to be updated, and updates the event if they match
                     if(title.equals("Delivery " + newDelivery.getDeliveryID())){
+                        //Sets the required values for the ContentValues attributes
                         ContentValues values = new ContentValues();
                         Calendar deliveryDate = Calendar.getInstance();
                         String dateOfDelivery = newDelivery.getDeliveryDate();
                         String[] parsedDeliveryDate = dateOfDelivery.split("/");
-
                         deliveryDate.set(Integer.parseInt(parsedDeliveryDate[2]), Integer.parseInt(parsedDeliveryDate[1]) - 1, Integer.parseInt(parsedDeliveryDate[0]), 8, 0);
                         long dateMilliseconds = deliveryDate.getTimeInMillis();
                         values.put(CalendarContract.Events.DTSTART, dateMilliseconds);
                         values.put(CalendarContract.Events.DTEND, dateMilliseconds);
 
+                        //Updates the Calendar event
                         Uri eventsUri = Uri.parse("content://com.android.calendar/events");
                         Uri eventUri = ContentUris.withAppendedId(eventsUri, id);
-                        int i = getContentResolver().update(eventUri, values, null, null);
+                        getContentResolver().update(eventUri, values, null, null);
                     }
                 }
             }
@@ -553,9 +590,32 @@ public class DeliveryActivity extends AppCompatActivity {
     //Method sends an SMS to the Client when a Delivery is scheduled/updated
     public void sendSMS(Delivery delivery){
         try{
-            SmsManager smsManager = SmsManager.getDefault();
-            //smsManager.sendTextMessage();
-            //TODO
+            //Checks for permission to send an SMS, and sends the SMS if permission is granted
+            if(ContextCompat.checkSelfPermission(DeliveryActivity.this, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED){
+                String clientID = delivery.getDeliveryClientID();
+                String clientPhoneNumber = "";
+
+                //Fetches the Client's phone number
+                for(Client client : lstClients){
+                    if(client.getClientID().equals(clientID)){
+                        clientPhoneNumber = client.getClientPhoneNumber();
+                        break;
+                    }
+                }
+
+                //Sets the content of the SMS
+                String messageContent = "";
+                if(action.equals("add")){
+                    messageContent = "Hello, please note that your Delivery (ID: " + delivery.getDeliveryID() + ") has been scheduled to be delivered on " + delivery.getDeliveryDate() + ".";
+                }
+                else{
+                    messageContent = "Hello, please note that your Delivery (ID: " + delivery.getDeliveryID() + ") has been rescheduled to be delivered on " + delivery.getDeliveryDate() + ".";
+                }
+
+                //Sends the SMS
+                SmsManager smsManager = SmsManager.getDefault();
+                smsManager.sendTextMessage(clientPhoneNumber, null, messageContent, null, null);
+            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -590,11 +650,13 @@ public class DeliveryActivity extends AppCompatActivity {
 
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData){
+            //Processes the result when the Stock is fetched from the Firebase Database
             if(resultCode == FirebaseService.ACTION_FETCH_STOCK_RESULT_CODE){
                 lstStock = (ArrayList<Stock>) resultData.getSerializable(FirebaseService.ACTION_FETCH_STOCK);
 
                 //Displays error message if there are no Stock items to display
                 if(lstStock.size() > 0){
+                    //Displays the Stock or fetches the Deliveries (based on the value of the firebaseAction variable)
                     if(firebaseAction.equals("stock")){
                         displaySpinnerDeliveryItems(lstStock);
                     }
@@ -606,25 +668,30 @@ public class DeliveryActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(), "There are currently no Stock items added", Toast.LENGTH_LONG).show();
                 }
             }
+            //Processes the result when the Client data is fetched from the Firebase Database
             else if(resultCode == FirebaseService.ACTION_FETCH_CLIENTS_RESULT_CODE){
-                ArrayList<Client> lstClients = (ArrayList<Client>) resultData.getSerializable(FirebaseService.ACTION_FETCH_CLIENTS);
+                lstClients = (ArrayList<Client>) resultData.getSerializable(FirebaseService.ACTION_FETCH_CLIENTS);
 
-                //Displays error message if there are no Stock items to display
+                //Displays the Client data, or displays an error message if there are no Clients to display
                 if(lstClients.size() > 0){
-                    displaySpinnerClients(lstClients);
+                    displaySpinnerClients();
                 }
                 else{
                     Toast.makeText(getApplicationContext(), "There are currently no Clients added", Toast.LENGTH_LONG).show();
                 }
             }
+            //Processes the result when the Delivery has been written to the Firebase Database
             else if(resultCode == FirebaseService.ACTION_WRITE_DELIVERY_RESULT_CODE){
                 boolean success = resultData.getBoolean(FirebaseService.ACTION_WRITE_DELIVERY);
 
+                //Performs the appropriate action based on whether the Delivery was written to the Firebase Database successfully
                 if(success){
                     Intent intent;
                     if(action.equals("add")){
                         addDeliveryToCalendar();
                         Toast.makeText(getApplicationContext(), "Delivery successfully added", Toast.LENGTH_LONG).show();
+
+                        //Refreshes the current Activity to allow the user to add more Deliveries if need be
                         intent = getIntent();
                         finish();
                     }
@@ -644,7 +711,9 @@ public class DeliveryActivity extends AppCompatActivity {
                 //Hides ProgressBar
                 toggleProgressBarVisibility(View.INVISIBLE);
             }
+            //Processes the result once the Deliveries have been fetched from the Firebase Database
             else if(resultCode == FirebaseService.ACTION_FETCH_DELIVERIES_RESULT_CODE){
+                //Attempts to write the Delivery to the Firebase Database
                 ArrayList<Delivery> lstDeliveries = (ArrayList<Delivery>) resultData.getSerializable(FirebaseService.ACTION_FETCH_DELIVERIES);
                 saveDeliveryDetails(lstStock, lstDeliveries);
 

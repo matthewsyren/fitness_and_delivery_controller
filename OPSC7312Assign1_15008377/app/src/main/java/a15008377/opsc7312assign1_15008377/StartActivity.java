@@ -1,3 +1,11 @@
+/*
+ * Author: Matthew Syrén
+ *
+ * Date:   29 August 2017
+ *
+ * Description: Class allows the user to navigate through the app
+ */
+
 package a15008377.opsc7312assign1_15008377;
 
 import android.content.Intent;
@@ -5,15 +13,19 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
-
 import com.google.firebase.auth.FirebaseAuth;
 
 public class StartActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_start);
+        try{
+            super.onCreate(savedInstanceState);
+            setContentView(R.layout.activity_start);
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     //Method prevents the user from going back to the previous Activity by clicking the back button

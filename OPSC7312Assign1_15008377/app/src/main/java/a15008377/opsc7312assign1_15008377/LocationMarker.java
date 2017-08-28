@@ -1,24 +1,28 @@
-package a15008377.opsc7312assign1_15008377;
+/*
+ * Author: Matthew Syrén
+ *
+ * Date:   29 August 2017
+ *
+ * Description: Class used to as a basis for a LocationMarker object
+ */
 
-import android.location.LocationManager;
+package a15008377.opsc7312assign1_15008377;
 
 import com.google.android.gms.maps.model.LatLng;
 
-import java.io.Serializable;
-
-/**
- * Created by Matthew Syrén on 2017/07/29.
- */
-
+@SuppressWarnings("WeakerAccess")
 public class LocationMarker{
+    //Declarations
     private LatLng location;
     private String markerTitle;
 
+    //Constructor
     public LocationMarker(LatLng location, String markerTitle){
         this.location = location;
         this.markerTitle = markerTitle;
     }
 
+    //Getter methods
     public LatLng getLocation() {
         return location;
     }
@@ -27,11 +31,8 @@ public class LocationMarker{
         return markerTitle;
     }
 
+    //Setter method
     public void setLocation(LatLng location) {
         this.location = location;
-    }
-
-    public void setMarkerTitle(String markerTitle) {
-        this.markerTitle = markerTitle;
     }
 }

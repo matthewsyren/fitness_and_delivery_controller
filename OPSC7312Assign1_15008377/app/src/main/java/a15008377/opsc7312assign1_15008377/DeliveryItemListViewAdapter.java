@@ -1,7 +1,7 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
  * Description: Class displays DeliveryItem object information in the appropriate ListView
  */
@@ -49,7 +49,7 @@ public class DeliveryItemListViewAdapter extends ArrayAdapter{
         LayoutInflater inflater = ((Activity)context).getLayoutInflater();
         convertView = inflater.inflate(R.layout.list_view_row_delivery_item_report, parent, false);
 
-        //Component assignments
+        //View assignments
         txtDeliveryItemID = (TextView) convertView.findViewById(R.id.text_delivery_item_id);
         txtDeliveryItemQuantity = (TextView) convertView.findViewById(R.id.text_delivery_item_quantity);
         btnDecrementQuantity = (Button) convertView.findViewById(R.id.button_decrement_delivery_item);

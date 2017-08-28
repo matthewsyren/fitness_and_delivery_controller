@@ -1,7 +1,7 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
  * Description: Class provides the basis for a Client object
  */
@@ -10,16 +10,12 @@ package a15008377.opsc7312assign1_15008377;
 
 import android.content.Context;
 import android.content.Intent;
-import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
 import android.util.Patterns;
-import android.view.View;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import java.io.IOException;
 import java.io.Serializable;
 
 @SuppressWarnings("WeakerAccess")
@@ -40,6 +36,7 @@ public class Client implements Serializable{
         this.clientAddress = clientAddress;
     }
 
+    //Default constructor
     public Client(){}
 
     //Getter methods
@@ -76,7 +73,7 @@ public class Client implements Serializable{
         this.clientLatitude = clientLatitude;
     }
 
-    //Method ensures that the Client has valid values for all of its fields. Returns true of Client is valid, otherwise returns false
+    //Method ensures that the Client has valid values for all of its fields. Returns true if Client is valid, otherwise returns false
     public boolean validateClient(Context context){
         boolean validClient = false;
 
@@ -92,6 +89,9 @@ public class Client implements Serializable{
         }
         else if(clientPhoneNumber.length() == 0){
             Toast.makeText(context, "Please enter a Client Phone Number", Toast.LENGTH_LONG).show();
+        }
+        else if(!Patterns.PHONE.matcher(clientPhoneNumber).matches()){
+            Toast.makeText(context, "Please enter a valid Client Phone Number", Toast.LENGTH_LONG).show();
         }
         else if(clientAddress.length() == 0){
             Toast.makeText(context, "Please enter a Client Address", Toast.LENGTH_LONG).show();
@@ -137,7 +137,7 @@ public class Client implements Serializable{
         }
     }
 
-    //Method parses the JSOn from the response String passed into the method, and returns a JSONObject if the JSON is valid, otherwise it returns null
+    //Method parses the JSON from the response String passed into the method, and returns a JSONObject if the JSON is valid, otherwise it returns null
     public static JSONObject getAddressCoordinates(String response, Context context) throws JSONException{
         if(response != null){
             JSONObject jsonObject = new JSONObject(response);

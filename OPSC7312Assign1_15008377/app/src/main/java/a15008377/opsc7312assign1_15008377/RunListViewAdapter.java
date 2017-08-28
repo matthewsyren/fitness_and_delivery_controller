@@ -1,3 +1,11 @@
+/*
+ * Author: Matthew Syrén
+ *
+ * Date:   29 August 2017
+ *
+ * Description: Class populates a ListView with the Runs a user has saved
+ */
+
 package a15008377.opsc7312assign1_15008377;
 
 import android.app.Activity;
@@ -13,17 +21,11 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-
 import java.util.ArrayList;
-
-/**
- * Class populates a ListView with the data that is passed into the constructor
- */
 
 @SuppressWarnings("WeakerAccess")
 public class RunListViewAdapter extends ArrayAdapter {
@@ -67,6 +69,7 @@ public class RunListViewAdapter extends ArrayAdapter {
         imageReference.getBytes(1024 * 1024).addOnSuccessListener(new OnSuccessListener<byte[]>() {
             @Override
             public void onSuccess(byte[] bytes) {
+                //Displays the image
                 Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                 image.setImageBitmap(bitmap);
             }

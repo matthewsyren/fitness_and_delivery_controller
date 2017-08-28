@@ -1,3 +1,11 @@
+/*
+ * Author: Matthew Syrén
+ *
+ * Date:   29 August 2017
+ *
+ * Description: Class allows the user to create an account
+ */
+
 package a15008377.opsc7312assign1_15008377;
 
 import android.content.Context;
@@ -32,6 +40,7 @@ public class CreateAccountActivity extends AppCompatActivity {
             //Hides ProgressBar
             toggleProgressBarVisibility(View.INVISIBLE);
 
+            //Gets an instance of FirebaseAuth, which is used to create the account
             firebaseAuth = FirebaseAuth.getInstance();
         }
         catch(Exception exc){
@@ -62,10 +71,12 @@ public class CreateAccountActivity extends AppCompatActivity {
     //Method creates an account for the user
     public void createAccountOnClick(View view){
         try{
+            //View assignments
             EditText txtEmail = (EditText) findViewById(R.id.text_create_account_email);
             EditText txtPassword = (EditText) findViewById(R.id.text_create_account_password);
             EditText txtConfirmPassword = (EditText) findViewById(R.id.text_create_account_confirm_password);
 
+            //Fetches the contents of the Views
             String email = txtEmail.getText().toString();
             String password = txtPassword.getText().toString();
             String confirmPassword = txtConfirmPassword.getText().toString();
@@ -79,8 +90,6 @@ public class CreateAccountActivity extends AppCompatActivity {
                 firebaseAuth.createUserWithEmailAndPassword(user.getUserEmailAddress(), user.getUserPassword()).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
-                        Log.d("TAG", "createUserWithEmail:onComplete:" + task.isSuccessful());
-
                         if(task.isSuccessful()){
                             //Registers the user in the Firebase authentication for this app
                             pushUser(user.getUserEmailAddress());
@@ -102,25 +111,23 @@ public class CreateAccountActivity extends AppCompatActivity {
         }
     }
 
-    //Method generates a unique key for the created user, and writes the key and its value (the user's email) to the 'Users' child in the Firebase database
+    //Method generates a unique key for the created user, and writes the key and its value (the user's email) to the 'Users' child node in the Firebase database
     public void pushUser(String emailAddress){
         try{
-            //Establishes a connection to the Firebase database
+            //Establishes a connection to the Firebase Database
             FirebaseDatabase database = FirebaseDatabase.getInstance();
             DatabaseReference databaseReference = database.getReference().child("Users");
 
-            //Generates the user's key and saves the value (the user's email address) to the Firebase database
+            //Generates the user's unique key and saves the value (the user's email address) to the Firebase database
             String key =  databaseReference.push().getKey();
             databaseReference.child(key).setValue(emailAddress);
 
-            //Saves the user's email and key to the device's SharedPreferences
+            //Saves the user's email and key to the device's SharedPreferences, and displays a message to the user
             SharedPreferences preferences = getSharedPreferences("", Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = preferences.edit();
             editor.putString("userEmail", emailAddress);
             editor.putString("userKey", key);
-            editor.putBoolean("dataSavingMode", false);
             editor.apply();
-
             Toast.makeText(getApplicationContext(), "Account successfully created!", Toast.LENGTH_LONG).show();
 
             //Takes the user to the next activity

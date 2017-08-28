@@ -43,12 +43,44 @@
         android:layout_height="match_parent"
         android:layout_weight="1">
         <Button
+            android:id="@+id/button_question_one_help"
+            android:layout_width="368dp"
+            android:layout_height="wrap_content"
+            android:text="Question 1 Help"
+            android:background="@drawable/button"
+            android:onClick="signOutOnClick"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:textColor="@color/colorPrimary"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1">
+        <Button
             android:id="@+id/button_question_two"
             android:layout_width="368dp"
             android:layout_height="wrap_content"
             android:text="@string/question_two"
             android:background="@drawable/button"
             android:onClick="questionTwoOnClick"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:textColor="@color/colorPrimary"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1">
+        <Button
+            android:id="@+id/button_question_two_help"
+            android:layout_width="368dp"
+            android:layout_height="wrap_content"
+            android:text="Question 2 Help"
+            android:background="@drawable/button"
+            android:onClick="signOutOnClick"
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true"
             android:textColor="@color/colorPrimary"/>

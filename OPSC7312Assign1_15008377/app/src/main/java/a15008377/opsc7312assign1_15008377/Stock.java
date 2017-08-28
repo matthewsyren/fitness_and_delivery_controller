@@ -1,7 +1,7 @@
-/**
+/*
  * Author: Matthew Syrén
  *
- * Date:   19 May 2017
+ * Date:   29 August 2017
  *
  * Description: Class provides a template for a Stock object
  */
@@ -10,21 +10,9 @@ package a15008377.opsc7312assign1_15008377;
 
 import android.content.Context;
 import android.content.Intent;
-import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
-import android.view.View;
 import android.widget.Toast;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.io.Serializable;
-import java.util.ArrayList;
-import static android.content.Context.MODE_APPEND;
 
 @SuppressWarnings("WeakerAccess")
 public class Stock implements Serializable{
@@ -56,7 +44,7 @@ public class Stock implements Serializable{
         return stockQuantity;
     }
 
-    //Setter methods
+    //Setter method
     public void setStockQuantity(int stockQuantity){
         this.stockQuantity = stockQuantity;
     }
@@ -86,60 +74,6 @@ public class Stock implements Serializable{
         }
 
         return validStock;
-    }
-
-    //Method returns an ArrayList of all Stock items in the Stock.txt text file
-    public static ArrayList<Stock> readStockItems(Context context) throws IOException {
-        String line;
-        ArrayList<Stock> lstStock = new ArrayList<>();
-        File file = new File(context.getFilesDir(), "Stock.txt");
-        FileInputStream fileInputStream = context.openFileInput(file.getName());
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream));
-
-        //Loops through the file and instantiate a Stock object for each line, and adding that Stock object to the lstStock ArrayList
-        while((line = bufferedReader.readLine()) != null){
-            String[] part = line.split("\\|");
-            Stock stock = new Stock(part[0], part[1], Integer.parseInt(part[2]));
-            lstStock.add(stock);
-        }
-
-        return lstStock;
-    }
-
-    //Method deletes a Stock item from the Stock.txt file
-    public void deleteStockItem(String stockID, Context context) throws IOException{
-        boolean foundStockID = false;
-
-        //Loops through the Stock items until the item to be removed is found and removed
-        ArrayList<Stock> lstStock = Stock.readStockItems(context);
-        for(int i = 0; i < lstStock.size() && !foundStockID; i++) {
-            if(lstStock.get(i).getStockID().equals(stockID)){
-                lstStock.remove(i);
-                i--;
-                foundStockID = true;
-            }
-        }
-
-        //Updates the contents of the Stock.txt text file
-        rewriteFile(lstStock, context);
-        Toast.makeText(context, "Stock item successfully deleted", Toast.LENGTH_LONG).show();
-    }
-
-    //Method deletes the contents of the Stock.txt file and rewrites its content (used once a Stock item has been updated or deleted)
-    public void rewriteFile(ArrayList<Stock> lstStock, Context context) throws IOException{
-        //Clears contents of file
-        File file = new File(context.getFilesDir(), "Stock.txt");
-        PrintWriter writer = new PrintWriter(file);
-        writer.print("");
-        writer.close();
-
-        //Writes updated data to the Stock.txt text file
-        FileOutputStream fileOutputStream = context.openFileOutput(file.getName(), MODE_APPEND);
-        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream);
-        for(int i = 0; i < lstStock.size(); i++){
-            outputStreamWriter.write(lstStock.get(i).getStockID() + "|" + lstStock.get(i).getStockDescription() + "|" + lstStock.get(i).getStockQuantity() + "\n");
-        }
-        outputStreamWriter.close();
     }
 
     //Requests Stock Items from the Firebase Database
