@@ -55,10 +55,32 @@ public class StartActivity extends AppCompatActivity {
         }
     }
 
+    //Opens the Question1HelpActivity
+    public void questionOneHelpOnClick(View view){
+        try{
+            Intent intent = new Intent(StartActivity.this, Question1HelpActivity.class);
+            startActivity(intent);
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     //Opens the Question 2 section of the app
     public void questionTwoOnClick(View view){
         try{
             Intent intent = new Intent(StartActivity.this, Question2.class);
+            startActivity(intent);
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    //Opens the Question2HelpActivity
+    public void questionTwoHelpOnClick(View view){
+        try{
+            Intent intent = new Intent(StartActivity.this, Question2HelpActivity.class);
             startActivity(intent);
         }
         catch(Exception exc){

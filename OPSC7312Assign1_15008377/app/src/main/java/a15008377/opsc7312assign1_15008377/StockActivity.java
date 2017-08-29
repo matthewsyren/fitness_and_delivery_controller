@@ -112,9 +112,6 @@ public class StockActivity extends AppCompatActivity {
     //Method adds/updates the Stock details to the database
     public void addStockOnClick(View view) {
         try{
-            //Displays ProgressBar
-            toggleProgressBarVisibility(View.VISIBLE);
-
             //View assignments
             EditText txtStockID = (EditText) findViewById(R.id.text_stock_id);
             EditText txtStockDescription = (EditText) findViewById(R.id.text_stock_description);

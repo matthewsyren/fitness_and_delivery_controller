@@ -59,6 +59,7 @@ public class DeliveryActivity extends AppCompatActivity {
     private ArrayList<DeliveryItem> lstOriginalDeliveryItems = new ArrayList<>();
     private Delivery newDelivery;
     private ArrayList<Client> lstClients = new ArrayList<>();
+    private ArrayList<Stock> lstUpdatedStockItems;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,15 +94,20 @@ public class DeliveryActivity extends AppCompatActivity {
     //Method checks the permissions required for this page, and requests the permissions if they haven't been granted
     public void checkPermissions(){
         try{
+            ArrayList<String> lstPermissions = new ArrayList();
             //Checks for permission to send an SMS, and requests the permission if it is not granted
             if(ContextCompat.checkSelfPermission(DeliveryActivity.this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(DeliveryActivity.this, new String[]{Manifest.permission.SEND_SMS}, 1);
+                lstPermissions.add(Manifest.permission.SEND_SMS);
             }
 
             //Checks for permission to write to the phone's calendar, and asks for permission if the permission is disabled
             if(ContextCompat.checkSelfPermission(DeliveryActivity.this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(DeliveryActivity.this, new String[]{Manifest.permission.WRITE_CALENDAR}, PackageManager.PERMISSION_GRANTED);
+                lstPermissions.add(Manifest.permission.WRITE_CALENDAR);
             }
+
+            //Asks for missing permissions
+            String[] permissions = lstPermissions.toArray(new String[lstPermissions.size()]);
+            ActivityCompat.requestPermissions(DeliveryActivity.this, permissions , 1);
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
@@ -396,7 +402,7 @@ public class DeliveryActivity extends AppCompatActivity {
             String clientID = spinner.getSelectedItem().toString();
             clientID = clientID.substring(0, clientID.indexOf(" "));
             ArrayList<DeliveryItem> lstDeliveryItems = getDeliveryItems();
-            final ArrayList<Stock> lstUpdatedStockItems = new ArrayList<>();
+            lstUpdatedStockItems = new ArrayList<>();
 
             //Loops through the original items from the Delivery (as when updating the Delivery the Delivery Items may change), and determines if the updated Delivery has removed any Delivery Items
             for(DeliveryItem originalDeliveryItem : lstOriginalDeliveryItems){
@@ -446,9 +452,6 @@ public class DeliveryActivity extends AppCompatActivity {
                         }
                         else{
                             //Available Stock quantity is updated if there is enough Stock to cater for the Delivery (the amount of items used in the Delivery is subtracted from the available Stock quantity)
-                            if(numberOfItems < 0){
-                                Toast.makeText(getApplicationContext(), "Avail: " + availableStockQuantity + "    Quan: " + numberOfItems, Toast.LENGTH_LONG).show();
-                            }
                             lstStock.get(j).setStockQuantity(availableStockQuantity - numberOfItems);
                             lstUpdatedStockItems.add(lstStock.get(j));
                         }
@@ -469,12 +472,8 @@ public class DeliveryActivity extends AppCompatActivity {
                         //Attempts to write Delivery details to the Firebase Database
                         delivery.requestWriteOfDelivery(this, action, new DataReceiver(new Handler()));
 
-                        //Writes the updated available Stock quantities to the Firebase Database
+                        //Sets global variable which will be used to once the Delivery has been written to the Firebase Database
                         newDelivery = delivery;
-                        updateStockLevels(lstUpdatedStockItems);
-
-                        //Sends an SMS to the Client that tells them when their Delivery is scheduled for
-                        sendSMS(delivery);
                     }
                 }
             }
@@ -496,7 +495,7 @@ public class DeliveryActivity extends AppCompatActivity {
     }
 
     //Method receives an ArrayList of Stock items with an updated quantity, and updates the available quantity of Stock in the Firebase Database
-    public void updateStockLevels(final ArrayList<Stock> lstStock){
+    public void updateStockLevels(){
         try{
             //Gets Firebase Database reference
             final FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
@@ -507,13 +506,12 @@ public class DeliveryActivity extends AppCompatActivity {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     //Writes the updated Stock to the Firebase Database
-                    for(int i = 0; i < lstStock.size(); i++){
-                        databaseReference.child(lstStock.get(i).getStockID()).setValue(lstStock.get(i));
+                    for(int i = 0; i < lstUpdatedStockItems.size(); i++){
+                        databaseReference.child(lstUpdatedStockItems.get(i).getStockID()).setValue(lstUpdatedStockItems.get(i));
                     }
 
                     //Removes the EventListener for the Firebase Database and displays a message to the user
                     databaseReference.removeEventListener(this);
-                    Toast.makeText(getApplicationContext(), "Stock levels updated", Toast.LENGTH_LONG).show();
                 }
 
                 @Override
@@ -603,11 +601,11 @@ public class DeliveryActivity extends AppCompatActivity {
     }
 
     //Method sends an SMS to the Client when a Delivery is scheduled/updated
-    public void sendSMS(Delivery delivery){
+    public void sendSMS(){
         try{
             //Checks for permission to send an SMS, and sends the SMS if permission is granted
             if(ContextCompat.checkSelfPermission(DeliveryActivity.this, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED){
-                String clientID = delivery.getDeliveryClientID();
+                String clientID = newDelivery.getDeliveryClientID();
                 String clientPhoneNumber = "";
 
                 //Fetches the Client's phone number
@@ -621,10 +619,10 @@ public class DeliveryActivity extends AppCompatActivity {
                 //Sets the content of the SMS
                 String messageContent = "";
                 if(action.equals("add")){
-                    messageContent = "Hello, please note that your Delivery (ID: " + delivery.getDeliveryID() + ") has been scheduled to be delivered on " + delivery.getDeliveryDate() + ".";
+                    messageContent = "Hello, please note that your Delivery (ID: " + newDelivery.getDeliveryID() + ") has been scheduled to be delivered on " + newDelivery.getDeliveryDate() + ".";
                 }
                 else{
-                    messageContent = "Hello, please note that your Delivery (ID: " + delivery.getDeliveryID() + ") has been rescheduled to be delivered on " + delivery.getDeliveryDate() + ".";
+                    messageContent = "Hello, please note that your Delivery (ID: " + newDelivery.getDeliveryID() + ") has been rescheduled to be delivered on " + newDelivery.getDeliveryDate() + ".";
                 }
 
                 //Sends the SMS
@@ -709,6 +707,10 @@ public class DeliveryActivity extends AppCompatActivity {
                         //Takes the user back to the DeliveryControlActivity once the update is complete
                         intent = new Intent(DeliveryActivity.this, DeliveryControlActivity.class);
                     }
+
+                    //Sends an SMS to the Client that tells them when their Delivery is scheduled for, and updates the available Stock qusantities
+                    sendSMS();
+                    updateStockLevels();
                     startActivity(intent);
                 }
                 else{

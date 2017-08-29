@@ -60,6 +60,26 @@ public class Question1A extends AppCompatActivity {
         }
     }
 
+    //Handles the user's response to the permission request
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) throws SecurityException{
+        switch(requestCode){
+            case 1:
+                if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    //Refreshes the current Activity
+                    Intent intent = getIntent();
+                    finish();
+
+                    startActivity(intent);
+                }
+                else{
+                    Toast.makeText(getApplicationContext(), "In order to use this page, you will need to allow the app to access your current location...", Toast.LENGTH_LONG).show();
+                }
+                break;
+        }
+        toggleProgressBarVisibility(View.INVISIBLE);
+    }
+
     //Takes the user back to the StartActivity when the back button is pressed
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

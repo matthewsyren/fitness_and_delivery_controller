@@ -13,12 +13,14 @@
 
     <Button
         android:id="@+id/button_view_on_map"
+        android:layout_margin="@dimen/activity_horizontal_margin"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:text="View On Map"
-        android:background="@drawable/button"
-        android:onClick="viewOnMapOnClick"/>
+        android:text="@string/view_on_map"
+        android:background="@drawable/button_rounded"
+        android:onClick="viewOnMapOnClick"
+        android:textColor="@color/colorPrimary"/>
 
     <ProgressBar
         android:layout_width="@dimen/progress_bar_diameter"

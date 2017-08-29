@@ -13,7 +13,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.os.ResultReceiver;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
@@ -39,11 +41,37 @@ public class RoutePlannerActivity extends AppCompatActivity implements IAPIConne
             //Displays ProgressBar
             toggleProgressBarVisibility(View.VISIBLE);
 
+            //Displays Back button in ActionBar
+            ActionBar actionBar = getSupportActionBar();
+            if(actionBar != null){
+                actionBar.setDisplayHomeAsUpEnabled(true);
+                actionBar.setTitle("Route Planner");
+            }
+
             //Fetches the Client information from Firebase
             new Client().requestClients(null, getApplicationContext(), new DataReceiver(new Handler()));
         } catch (Exception exc) {
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    //Takes the user back to the Question2 when the back button is pressed
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        try{
+            int id = item.getItemId();
+
+            //Takes the user back to the Question2 if the button that was pressed was the back button
+            if (id == android.R.id.home) {
+                Intent intent = new Intent(RoutePlannerActivity.this, Question2.class);
+                startActivity(intent);
+            }
+        }
+        catch(Exception exc){
+            Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     //Method fetches the data for the day's Deliveries that was passed from the Question2

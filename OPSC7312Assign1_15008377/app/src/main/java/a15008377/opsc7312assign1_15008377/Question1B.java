@@ -259,7 +259,7 @@ public class Question1B extends AppCompatActivity implements OnMapReadyCallback 
     //Method zooms the camera to the specified LatLng marker
     public void zoomToLocation(LatLng location){
         try{
-            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(location, 250);
+            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(location, 17);
             mMap.animateCamera(cameraUpdate);
         }
         catch(Exception exc){

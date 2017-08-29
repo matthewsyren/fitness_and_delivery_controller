@@ -8,6 +8,7 @@
 
 package a15008377.opsc7312assign1_15008377;
 
+import android.*;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentResolver;
@@ -24,6 +25,7 @@ import android.provider.CalendarContract;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.os.ResultReceiver;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -248,6 +250,26 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
         }
     }
 
+    //Method sends an SMS to the Client when a Delivery is deleted
+    public void sendSMS(String phoneNumber){
+        try{
+            //Checks for permission to send an SMS, and sends the SMS if permission is granted
+            if(ContextCompat.checkSelfPermission(context, android.Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED){
+                Delivery delivery = lstDeliveries.get(deliveryToBeDeletedPosition);
+
+                //Sets the content of the SMS
+                String messageContent = "Hello, please note that your Delivery (ID: " + delivery.getDeliveryID() + ") has been cancelled. We apologize for any inconvenience caused.";
+
+                //Sends the SMS
+                SmsManager smsManager = SmsManager.getDefault();
+                smsManager.sendTextMessage(phoneNumber, null, messageContent, null, null);
+            }
+        }
+        catch(Exception exc){
+            Toast.makeText(context, exc.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     //Creates a ResultReceiver to retrieve information from the FirebaseService
     private class DataReceiver extends ResultReceiver {
         private DataReceiver(Handler handler) {
@@ -267,6 +289,7 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
                     }
                     else{
                         Toast.makeText(context, "Delivery deleted successfully", Toast.LENGTH_LONG).show();
+                        new Client().requestClients(null, context, this);
                     }
                 }
             }
@@ -275,6 +298,19 @@ public class DeliveryReportListViewAdapter extends ArrayAdapter {
                 //Adds deleted Delivery Items from the Delivery back to Stock
                 ArrayList<Stock> lstStock = (ArrayList<Stock>) resultData.getSerializable(FirebaseService.ACTION_FETCH_STOCK);
                 addItemsBackToStock(lstStock);
+            }
+            else if(resultCode == FirebaseService.ACTION_FETCH_CLIENTS_RESULT_CODE){
+                ArrayList<Client> lstClients = (ArrayList<Client>) resultData.getSerializable(FirebaseService.ACTION_FETCH_CLIENTS);
+
+                String phoneNumber = "";
+                for(Client client : lstClients){
+                    if(client.getClientID().equals(lstDeliveries.get(deliveryToBeDeletedPosition).getDeliveryClientID())){
+                        phoneNumber = client.getClientPhoneNumber();
+                    }
+                }
+
+                //Sends an SMS to the Client informing them their Delivery has been cancelled
+                sendSMS(phoneNumber);
 
                 //Removes the Delivery from the ListView
                 lstDeliveries.remove(deliveryToBeDeletedPosition);

@@ -189,19 +189,24 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback {
             if(ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) == PackageManager.PERMISSION_GRANTED ) {
                 //Declares a LocationManager and uses the current location as the final destination of the trip (the Delivery vehicle goes back to the same place that it started at the end of the day)
                 final LocationManager locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
-                Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                Intent intent = new Intent(Question2.this, RoutePlannerActivity.class);
+                if(locationManager != null){
+                    Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                    Intent intent = new Intent(Question2.this, RoutePlannerActivity.class);
 
-                //Passes the Delivery data to the Google Maps APU
-                String url = "https://maps.googleapis.com/maps/api/directions/json?origin=" + latLng.latitude + ", " + latLng.longitude + "&destination=" + latLng.latitude + ", " + latLng.longitude + "&waypoints=optimize:true";
-                for(int i = 0; i < lstDestinations.size(); i++){
-                    url += "|" + lstDestinations.get(i).getLocation().latitude + "," + lstDestinations.get(i).getLocation().longitude;
+                    //Passes the Delivery data to the Google Maps APU
+                    String url = "https://maps.googleapis.com/maps/api/directions/json?origin=" + latLng.latitude + ", " + latLng.longitude + "&destination=" + latLng.latitude + ", " + latLng.longitude + "&waypoints=optimize:true";
+                    for(int i = 0; i < lstDestinations.size(); i++){
+                        url += "|" + lstDestinations.get(i).getLocation().latitude + "," + lstDestinations.get(i).getLocation().longitude;
+                    }
+                    url += "&key=AIzaSyBTetk2vsB8HxNqebMI4ez9fhrQwejkt2I";
+                    intent.putExtra("routeURL", url);
+                    intent.putExtra("lstDeliveries", lstDeliveries);
+                    startActivity(intent);
                 }
-                url += "&key=AIzaSyB-hYaZ4URR-NVjYV0vpgIAUYb4B3Z9Y2g";
-                intent.putExtra("routeURL", url);
-                intent.putExtra("lstDeliveries", lstDeliveries);
-                startActivity(intent);
+                else{
+                    Toast.makeText(getApplicationContext(), "Unable to get your location, please try again", Toast.LENGTH_LONG).show();
+                }
             }
             else{
                 Toast.makeText(getApplicationContext(), "Please enable location tracking before using this feature", Toast.LENGTH_LONG).show();

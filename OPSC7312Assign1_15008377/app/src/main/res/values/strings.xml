@@ -3,7 +3,9 @@
     <string name="title_activity_maps">Map</string>
     <string name="question_one_a">Question 1A</string>
     <string name="question_one_b">Question 1B</string>
+    <string name="question_one_help">Question 1 Help</string>
     <string name="question_two">Question 2</string>
+    <string name="question_two_help">Question 2 Help</string>
     <string name="sign_out">Sign Out</string>
 
     <string name="prompt_email">Enter your email address</string>
@@ -87,8 +89,10 @@
     <string name="text_completed_delivery_heading">Completed Deliveries</string>
     <string name="title_activity_help">HelpActivity</string>
 
-    <!-- HelpActivity -->
-    <string name="text_help">This app allows you to keep track of Stock, Clients and Deliveries. There is a dedicated page for the control of each of these categories, and those pages can be accessed via the menu. \n\nIf you would like to add information, then open the menu and click on the appropriate control page, and then click on the circular + button near the bottom right corner. \n\nIf you would like to update existing data, go to the appropriate control page and click on the item in the list that is displayed. \n\nTo delete an item, go to the appropriate Control page and click on the delete button on the appropriate item. \n\nStock and Client items are both needed before scheduling a Delivery, so be sure to add those before trying to schedule a Delivery. \n\nThe Home page will show a map with markers representing the destination of each of your Deliveries for the current date. You can click on one of the markers to see its information or to navigate to it using Google Maps</string>
+    <!-- HelpActivities -->
+    <string name="text_help">This app allows you to keep track of Stock, Clients and Deliveries. There is a dedicated page for the control of each of these categories, and those pages can be accessed via the menu. \n\nIf you would like to add information, then open the menu and click on the appropriate control page, and then click on the circular + button near the bottom right corner. \n\nIf you would like to update existing data, go to the appropriate control page and click on the item in the list that is displayed. \n\nTo delete an item, go to the appropriate Control page and click on the delete button on the appropriate item. Note, you will not be able to delete a Stock item or Client if there are any outstanding Deliveries that use the Stock item/Client. \n\nStock and Client items are both needed before scheduling a Delivery, so be sure to add those before trying to schedule a Delivery. \n\nThe Home page will show a map with markers representing the destination of each of your Deliveries for the current date. You can click on one of the markers to see its information or to navigate to it using Google Maps. \n\nTo optimise your route (take the fastest route), click on the navigate icon at the bottom right of the screen, which will then calculate the fastest route for your Deliveries (provided you have 23 Deliveries or less).</string>
+    <string name="question_1_help">Question 1 is split into two parts, namely Question 1A and Question 1B. \n\nQuestion 1A will simply fetch your current location when you open it, and requires no user input. Once your address has been determined, the app will display your address, and if your location changes, the app will update your address automatically. \n\nQuestion 1B was made to allow a runner to save the route that they took. To begin tracking your route, click on the running man icon in the bottom right corner of the screen. This will get your current location, and will re-centre the map on your location whenever you move, and draw a blue line over the route that you have run. \n\nTo save your route, click on the stop button in the bottom right of the screen, and say yes when the app prompts you to save your route. Runs that you have saved can then be viewed by clicking on the history button in the bottom right corner of the screen. \n\nThe history screen will show the details of each run, and will allow you to view a full screen image of your route if you click on one of the runs.</string>
+    <string name="question_2_help">Question 2 allows you to keep track of Stock, Clients and Deliveries. The main objective of Question 2 is to control Deliveries that you need to make. \n\nThere is a detailed help screen for Question 2 within the Question 2 section of the app.</string>
 
     <!-- StockReportListViewAdapter -->
     <string name="stock_id">Stock ID: %s</string>
@@ -116,4 +120,6 @@
 
     <!-- Question1A -->
     <string name="current_address">Current Address: %s</string>
+
+    <string name="view_on_map">View on Map</string>
 </resources>

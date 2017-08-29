@@ -68,7 +68,7 @@ public class RouteViewerActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    //Method fetches the screenshot of the Run (from the Firebase Database) that was passed into this Activity, and displays it
+    //Method fetches the screenshot of the Run (from the Firebase Database) that was passed into this Activity, and displays it (learnt from https://firebase.google.com/docs/storage/android/download-files)
     public void displayImage(){
         try{
             //Displays ProgressBar
