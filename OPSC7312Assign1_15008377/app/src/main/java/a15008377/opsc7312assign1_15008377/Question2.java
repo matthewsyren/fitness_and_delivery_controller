@@ -53,24 +53,45 @@ public class Question2 extends BaseActivity implements OnMapReadyCallback {
             super.onCreateDrawer();
             super.setSelectedNavItem(R.id.nav_home);
 
-            //Checks for permission to access current location, and asks for permission if it hasn't been granted
-            if(ContextCompat.checkSelfPermission(Question2.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(Question2.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PackageManager.PERMISSION_GRANTED);
-            }
-
             //Hides FloatingActionButton
             FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
             fab.setVisibility(View.INVISIBLE);
 
-            //Displays ProgressBar
-            toggleProgressBarVisibility(View.VISIBLE);
+            //Checks for permission to access current location, and asks for permission if it hasn't been granted
+            if(ContextCompat.checkSelfPermission(Question2.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(Question2.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            }
+            else{
+                //Displays ProgressBar
+                toggleProgressBarVisibility(View.VISIBLE);
 
-            //Requests the Deliveries from the Firebase Database
-            new Delivery().requestDeliveries(null, this, new DataReceiver(new Handler()), 0);
+                //Requests the Deliveries from the Firebase Database
+                new Delivery().requestDeliveries(null, this, new DataReceiver(new Handler()), 0);
+            }
         }
         catch(Exception exc){
             Toast.makeText(getApplicationContext(), exc.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    //Handles the user's response to the permission request
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) throws SecurityException{
+        switch(requestCode){
+            case 1:
+                if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    //Refreshes the current Activity
+                    Intent intent = getIntent();
+                    finish();
+
+                    startActivity(intent);
+                }
+                else{
+                    Toast.makeText(getApplicationContext(), "In order to use this page, you will need to allow the app to access your current location...", Toast.LENGTH_LONG).show();
+                }
+                break;
+        }
+        toggleProgressBarVisibility(View.INVISIBLE);
     }
 
     //Displays Markers on a Map, with each Marker representing the destination of a Delivery that needs to be made

@@ -122,4 +122,5 @@
     <string name="current_address">Current Address: %s</string>
 
     <string name="view_on_map">View on Map</string>
+    <string name="label_forgot_password"><u>Forgot Password</u></string>
 </resources>
