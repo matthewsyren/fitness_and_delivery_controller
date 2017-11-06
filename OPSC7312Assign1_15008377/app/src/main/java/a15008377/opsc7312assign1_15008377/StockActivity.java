@@ -25,7 +25,7 @@ import java.util.Locale;
 
 public class StockActivity extends AppCompatActivity {
     //Declarations
-    String action;
+    private String action;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

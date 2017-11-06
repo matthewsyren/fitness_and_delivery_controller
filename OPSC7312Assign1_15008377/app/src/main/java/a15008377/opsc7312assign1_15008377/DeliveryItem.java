@@ -9,6 +9,7 @@
 package a15008377.opsc7312assign1_15008377;
 
 import java.io.Serializable;
+
 @SuppressWarnings("WeakerAccess")
 public class DeliveryItem implements Serializable{
     //Declarations
